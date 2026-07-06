@@ -1,0 +1,164 @@
+// Prisma schema for the Car Rental Fleet Manager
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  BOOKED
+  RESERVED
+  MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+enum BookingStatus {
+  RESERVED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  FUEL
+  MAINTENANCE
+  INSURANCE
+  REGISTRATION
+  CLEANING
+  PARKING_TOLLS
+  OTHER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+}
+
+model Vehicle {
+  id            String   @id @default(cuid())
+  plateNumber   String   @unique
+  make          String
+  model         String
+  year          Int
+  color         String?
+  photoUrl      String?
+  dailyRate     Float
+  status        VehicleStatus @default(AVAILABLE)
+  odometer      Int      @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings      Booking[]
+  expenses      Expense[]
+  maintenanceLogs MaintenanceLog[]
+  fuelLogs      FuelLog[]
+
+  @@index([status])
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  name           String
+  email          String?
+  phone          String
+  address        String?
+  driverLicense  String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  bookings       Booking[]
+
+  @@index([name])
+}
+
+model Booking {
+  id               String   @id @default(cuid())
+  vehicleId        String
+  customerId       String
+  startDate        DateTime
+  endDate          DateTime
+  status           BookingStatus @default(RESERVED)
+  dailyRate        Float
+  totalAmount      Float
+  securityDeposit  Float    @default(0)
+  depositReturned  Boolean  @default(false)
+  amountPaid       Float    @default(0)
+  pickupLocation   String?
+  dropoffLocation  String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([customerId])
+  @@index([startDate, endDate])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  category    ExpenseCategory
+  amount      Float
+  date        DateTime
+  description String?
+  vendor      String?
+  createdAt   DateTime @default(now())
+
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([date])
+  @@index([category])
+}
+
+model MaintenanceLog {
+  id              String   @id @default(cuid())
+  vehicleId       String
+  type            String
+  date            DateTime
+  cost            Float    @default(0)
+  odometer        Int?
+  vendor          String?
+  nextDueDate     DateTime?
+  nextDueOdometer Int?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([date])
+  @@index([nextDueDate])
+}
+
+model FuelLog {
+  id        String   @id @default(cuid())
+  vehicleId String
+  date      DateTime
+  liters    Float
+  cost      Float
+  odometer  Int?
+  fullTank  Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([date])
+}
