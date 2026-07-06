@@ -35,18 +35,60 @@ enum ExpenseCategory {
   OTHER
 }
 
+enum UserRole {
+  OWNER
+  STAFF
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+model Organization {
+  id                   String   @id @default(cuid())
+  name                 String
+  createdAt            DateTime @default(now())
+
+  // Stripe billing
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  stripePriceId        String?
+  subscriptionStatus   SubscriptionStatus @default(TRIALING)
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
+
+  users            User[]
+  vehicles         Vehicle[]
+  customers        Customer[]
+  bookings         Booking[]
+  expenses         Expense[]
+  maintenanceLogs  MaintenanceLog[]
+  fuelLogs         FuelLog[]
+}
+
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("ADMIN")
-  createdAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  email          String   @unique
+  passwordHash   String
+  role           UserRole @default(STAFF)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 model Vehicle {
   id            String   @id @default(cuid())
-  plateNumber   String   @unique
+  organizationId String
+  plateNumber   String
   make          String
   model         String
   year          Int
@@ -59,16 +101,19 @@ model Vehicle {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   bookings      Booking[]
   expenses      Expense[]
   maintenanceLogs MaintenanceLog[]
   fuelLogs      FuelLog[]
 
-  @@index([status])
+  @@unique([organizationId, plateNumber])
+  @@index([organizationId, status])
 }
 
 model Customer {
   id             String   @id @default(cuid())
+  organizationId String
   name           String
   email          String?
   phone          String
@@ -78,13 +123,15 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   bookings       Booking[]
 
-  @@index([name])
+  @@index([organizationId, name])
 }
 
 model Booking {
   id               String   @id @default(cuid())
+  organizationId   String
   vehicleId        String
   customerId       String
   startDate        DateTime
@@ -101,26 +148,31 @@ model Booking {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
   @@index([vehicleId])
   @@index([customerId])
   @@index([startDate, endDate])
 }
 
 model Expense {
-  id          String   @id @default(cuid())
-  vehicleId   String
-  category    ExpenseCategory
-  amount      Float
-  date        DateTime
-  description String?
-  vendor      String?
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  vehicleId      String
+  category       ExpenseCategory
+  amount         Float
+  date           DateTime
+  description    String?
+  vendor         String?
+  createdAt      DateTime @default(now())
 
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
   @@index([vehicleId])
   @@index([date])
   @@index([category])
@@ -128,6 +180,7 @@ model Expense {
 
 model MaintenanceLog {
   id              String   @id @default(cuid())
+  organizationId  String
   vehicleId       String
   type            String
   date            DateTime
@@ -139,26 +192,31 @@ model MaintenanceLog {
   notes           String?
   createdAt       DateTime @default(now())
 
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   vehicle         Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
   @@index([vehicleId])
   @@index([date])
   @@index([nextDueDate])
 }
 
 model FuelLog {
-  id        String   @id @default(cuid())
-  vehicleId String
-  date      DateTime
-  liters    Float
-  cost      Float
-  odometer  Int?
-  fullTank  Boolean  @default(true)
-  notes     String?
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  organizationId String
+  vehicleId      String
+  date           DateTime
+  liters         Float
+  cost           Float
+  odometer       Int?
+  fullTank       Boolean  @default(true)
+  notes          String?
+  createdAt      DateTime @default(now())
 
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
   @@index([vehicleId])
   @@index([date])
 }

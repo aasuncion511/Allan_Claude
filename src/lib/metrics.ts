@@ -37,23 +37,24 @@ function mergeToRows(
 
 /** Per-unit monthly revenue/expense/profit series across all recorded history. */
 export async function getVehicleMonthlySummary(
+  organizationId: string,
   vehicleId: string
 ): Promise<MonthlyRow[]> {
   const [bookings, expenses, maintenance, fuel] = await Promise.all([
     prisma.booking.findMany({
-      where: { vehicleId, status: { not: "CANCELLED" } },
+      where: { organizationId, vehicleId, status: { not: "CANCELLED" } },
       select: { startDate: true, totalAmount: true },
     }),
     prisma.expense.findMany({
-      where: { vehicleId },
+      where: { organizationId, vehicleId },
       select: { date: true, amount: true },
     }),
     prisma.maintenanceLog.findMany({
-      where: { vehicleId },
+      where: { organizationId, vehicleId },
       select: { date: true, cost: true },
     }),
     prisma.fuelLog.findMany({
-      where: { vehicleId },
+      where: { organizationId, vehicleId },
       select: { date: true, cost: true },
     }),
   ]);
@@ -80,11 +81,12 @@ export type VehicleFleetSummary = {
 };
 
 /** Fleet-wide monthly series (all units combined) plus a per-unit breakdown. */
-export async function getFleetSummary(): Promise<{
+export async function getFleetSummary(organizationId: string): Promise<{
   overall: MonthlyRow[];
   perVehicle: VehicleFleetSummary[];
 }> {
   const vehicles = await prisma.vehicle.findMany({
+    where: { organizationId },
     orderBy: { plateNumber: "asc" },
   });
 
@@ -93,7 +95,7 @@ export async function getFleetSummary(): Promise<{
   const perVehicle: VehicleFleetSummary[] = [];
 
   for (const vehicle of vehicles) {
-    const monthly = await getVehicleMonthlySummary(vehicle.id);
+    const monthly = await getVehicleMonthlySummary(organizationId, vehicle.id);
     let totalRevenue = 0;
     let totalExpense = 0;
     for (const row of monthly) {

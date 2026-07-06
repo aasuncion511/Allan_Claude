@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireOrgId } from "@/lib/auth";
 
 type BookingStatus = "RESERVED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
@@ -33,8 +33,14 @@ function parseBookingForm(formData: FormData) {
   };
 }
 
-async function syncVehicleStatus(vehicleId: string, bookingStatus: BookingStatus) {
-  const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+async function syncVehicleStatus(
+  organizationId: string,
+  vehicleId: string,
+  bookingStatus: BookingStatus
+) {
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, organizationId },
+  });
   if (!vehicle) return;
   if (vehicle.status === "MAINTENANCE" || vehicle.status === "OUT_OF_SERVICE") {
     return;
@@ -45,17 +51,26 @@ async function syncVehicleStatus(vehicleId: string, bookingStatus: BookingStatus
       : bookingStatus === "RESERVED"
         ? "RESERVED"
         : "AVAILABLE";
-  await prisma.vehicle.update({
-    where: { id: vehicleId },
+  await prisma.vehicle.updateMany({
+    where: { id: vehicleId, organizationId },
     data: { status: nextStatus },
   });
 }
 
+async function assertOwnedByOrg(organizationId: string, vehicleId: string, customerId: string) {
+  const [vehicle, customer] = await Promise.all([
+    prisma.vehicle.findFirst({ where: { id: vehicleId, organizationId } }),
+    prisma.customer.findFirst({ where: { id: customerId, organizationId } }),
+  ]);
+  if (!vehicle || !customer) notFound();
+}
+
 export async function createBooking(formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const data = parseBookingForm(formData);
-  await prisma.booking.create({ data });
-  await syncVehicleStatus(data.vehicleId, data.status);
+  await assertOwnedByOrg(organizationId, data.vehicleId, data.customerId);
+  await prisma.booking.create({ data: { ...data, organizationId } });
+  await syncVehicleStatus(organizationId, data.vehicleId, data.status);
   revalidatePath("/bookings");
   revalidatePath("/fleet");
   revalidatePath(`/fleet/${data.vehicleId}`);
@@ -64,13 +79,20 @@ export async function createBooking(formData: FormData) {
 }
 
 export async function updateBooking(bookingId: string, formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const data = parseBookingForm(formData);
-  const existing = await prisma.booking.findUnique({ where: { id: bookingId } });
-  await prisma.booking.update({ where: { id: bookingId }, data });
-  await syncVehicleStatus(data.vehicleId, data.status);
-  if (existing && existing.vehicleId !== data.vehicleId) {
-    await syncVehicleStatus(existing.vehicleId, "CANCELLED");
+  await assertOwnedByOrg(organizationId, data.vehicleId, data.customerId);
+  const existing = await prisma.booking.findFirst({
+    where: { id: bookingId, organizationId },
+  });
+  if (!existing) notFound();
+  await prisma.booking.updateMany({
+    where: { id: bookingId, organizationId },
+    data,
+  });
+  await syncVehicleStatus(organizationId, data.vehicleId, data.status);
+  if (existing.vehicleId !== data.vehicleId) {
+    await syncVehicleStatus(organizationId, existing.vehicleId, "CANCELLED");
   }
   revalidatePath("/bookings");
   revalidatePath("/fleet");
@@ -80,9 +102,13 @@ export async function updateBooking(bookingId: string, formData: FormData) {
 }
 
 export async function deleteBooking(bookingId: string) {
-  await requireUser();
-  const booking = await prisma.booking.delete({ where: { id: bookingId } });
-  await syncVehicleStatus(booking.vehicleId, "CANCELLED");
+  const organizationId = await requireOrgId();
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId, organizationId },
+  });
+  if (!booking) notFound();
+  await prisma.booking.deleteMany({ where: { id: bookingId, organizationId } });
+  await syncVehicleStatus(organizationId, booking.vehicleId, "CANCELLED");
   revalidatePath("/bookings");
   revalidatePath("/fleet");
   revalidatePath("/dashboard");

@@ -17,11 +17,20 @@ export async function verifyPassword(
 export async function getCurrentUser() {
   const userId = await getSessionUserId();
   if (!userId) return null;
-  return prisma.user.findUnique({ where: { id: userId } });
+  return prisma.user.findUnique({
+    where: { id: userId },
+    include: { organization: true },
+  });
 }
 
 export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   return user;
+}
+
+/** Convenience for actions/queries that only need the current org's id. */
+export async function requireOrgId(): Promise<string> {
+  const user = await requireUser();
+  return user.organizationId;
 }

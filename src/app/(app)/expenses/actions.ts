@@ -1,15 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireOrgId } from "@/lib/auth";
 
 export async function createExpense(formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const vehicleId = String(formData.get("vehicleId"));
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, organizationId },
+  });
+  if (!vehicle) notFound();
+
   await prisma.expense.create({
     data: {
+      organizationId,
       vehicleId,
       category: String(formData.get("category")) as
         | "INSURANCE"
@@ -30,8 +36,12 @@ export async function createExpense(formData: FormData) {
 }
 
 export async function deleteExpense(expenseId: string) {
-  await requireUser();
-  const expense = await prisma.expense.delete({ where: { id: expenseId } });
+  const organizationId = await requireOrgId();
+  const expense = await prisma.expense.findFirst({
+    where: { id: expenseId, organizationId },
+  });
+  if (!expense) notFound();
+  await prisma.expense.deleteMany({ where: { id: expenseId, organizationId } });
   revalidatePath("/expenses");
   revalidatePath(`/fleet/${expense.vehicleId}`);
   revalidatePath("/dashboard");

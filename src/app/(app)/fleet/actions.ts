@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireOrgId } from "@/lib/auth";
 
 function parseVehicleForm(formData: FormData) {
   return {
@@ -26,25 +26,29 @@ function parseVehicleForm(formData: FormData) {
 }
 
 export async function createVehicle(formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const data = parseVehicleForm(formData);
-  const vehicle = await prisma.vehicle.create({ data });
+  const vehicle = await prisma.vehicle.create({ data: { ...data, organizationId } });
   revalidatePath("/fleet");
   redirect(`/fleet/${vehicle.id}`);
 }
 
 export async function updateVehicle(vehicleId: string, formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const data = parseVehicleForm(formData);
-  await prisma.vehicle.update({ where: { id: vehicleId }, data });
+  const result = await prisma.vehicle.updateMany({
+    where: { id: vehicleId, organizationId },
+    data,
+  });
+  if (result.count === 0) notFound();
   revalidatePath("/fleet");
   revalidatePath(`/fleet/${vehicleId}`);
   redirect(`/fleet/${vehicleId}`);
 }
 
 export async function deleteVehicle(vehicleId: string) {
-  await requireUser();
-  await prisma.vehicle.delete({ where: { id: vehicleId } });
+  const organizationId = await requireOrgId();
+  await prisma.vehicle.deleteMany({ where: { id: vehicleId, organizationId } });
   revalidatePath("/fleet");
   redirect("/fleet");
 }

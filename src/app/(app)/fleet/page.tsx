@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency } from "@/lib/format";
 
 export default async function FleetPage() {
+  const organizationId = await requireOrgId();
   const vehicles = await prisma.vehicle.findMany({
+    where: { organizationId },
     orderBy: { plateNumber: "asc" },
   });
 

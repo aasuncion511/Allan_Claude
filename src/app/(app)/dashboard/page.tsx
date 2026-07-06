@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/badge";
@@ -15,9 +16,10 @@ export default async function DashboardPage({
   searchParams: Promise<{ year?: string }>;
 }) {
   const { year: yearParam } = await searchParams;
+  const organizationId = await requireOrgId();
   const [{ overall, perVehicle }, vehicles] = await Promise.all([
-    getFleetSummary(),
-    prisma.vehicle.findMany(),
+    getFleetSummary(organizationId),
+    prisma.vehicle.findMany({ where: { organizationId } }),
   ]);
 
   const years = distinctYears(overall);

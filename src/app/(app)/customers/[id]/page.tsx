@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -11,8 +12,9 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const customer = await prisma.customer.findUnique({
-    where: { id },
+  const organizationId = await requireOrgId();
+  const customer = await prisma.customer.findFirst({
+    where: { id, organizationId },
     include: {
       bookings: {
         include: { vehicle: true },

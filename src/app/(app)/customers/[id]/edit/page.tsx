@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { CustomerForm } from "@/components/customer-form";
 import { updateCustomer } from "../../actions";
@@ -10,7 +11,8 @@ export default async function EditCustomerPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const customer = await prisma.customer.findUnique({ where: { id } });
+  const organizationId = await requireOrgId();
+  const customer = await prisma.customer.findFirst({ where: { id, organizationId } });
   if (!customer) notFound();
 
   const action = updateCustomer.bind(null, customer.id);

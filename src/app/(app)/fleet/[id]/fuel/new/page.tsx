@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { createFuelLog } from "../actions";
 
@@ -9,7 +10,8 @@ export default async function NewFuelLogPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const vehicle = await prisma.vehicle.findUnique({ where: { id } });
+  const organizationId = await requireOrgId();
+  const vehicle = await prisma.vehicle.findFirst({ where: { id, organizationId } });
   if (!vehicle) notFound();
 
   const action = createFuelLog.bind(null, vehicle.id);

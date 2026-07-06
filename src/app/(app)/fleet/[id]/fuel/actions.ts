@@ -1,16 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireOrgId } from "@/lib/auth";
 
 export async function createFuelLog(vehicleId: string, formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, organizationId },
+  });
+  if (!vehicle) notFound();
+
   const odometerRaw = String(formData.get("odometer") ?? "").trim();
 
   await prisma.fuelLog.create({
     data: {
+      organizationId,
       vehicleId,
       date: new Date(String(formData.get("date"))),
       liters: Number(formData.get("liters")),
@@ -23,10 +29,9 @@ export async function createFuelLog(vehicleId: string, formData: FormData) {
 
   if (odometerRaw) {
     const odometer = Number(odometerRaw);
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
-    if (vehicle && odometer > vehicle.odometer) {
-      await prisma.vehicle.update({
-        where: { id: vehicleId },
+    if (odometer > vehicle.odometer) {
+      await prisma.vehicle.updateMany({
+        where: { id: vehicleId, organizationId },
         data: { odometer },
       });
     }
@@ -38,8 +43,10 @@ export async function createFuelLog(vehicleId: string, formData: FormData) {
 }
 
 export async function deleteFuelLog(vehicleId: string, logId: string) {
-  await requireUser();
-  await prisma.fuelLog.delete({ where: { id: logId } });
+  const organizationId = await requireOrgId();
+  await prisma.fuelLog.deleteMany({
+    where: { id: logId, vehicleId, organizationId },
+  });
   revalidatePath(`/fleet/${vehicleId}`);
   revalidatePath("/dashboard");
   redirect(`/fleet/${vehicleId}`);

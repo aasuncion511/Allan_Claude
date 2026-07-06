@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireOrgId } from "@/lib/auth";
 
 function parseCustomerForm(formData: FormData) {
   return {
@@ -17,25 +17,29 @@ function parseCustomerForm(formData: FormData) {
 }
 
 export async function createCustomer(formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const data = parseCustomerForm(formData);
-  const customer = await prisma.customer.create({ data });
+  const customer = await prisma.customer.create({ data: { ...data, organizationId } });
   revalidatePath("/customers");
   redirect(`/customers/${customer.id}`);
 }
 
 export async function updateCustomer(customerId: string, formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const data = parseCustomerForm(formData);
-  await prisma.customer.update({ where: { id: customerId }, data });
+  const result = await prisma.customer.updateMany({
+    where: { id: customerId, organizationId },
+    data,
+  });
+  if (result.count === 0) notFound();
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}`);
 }
 
 export async function deleteCustomer(customerId: string) {
-  await requireUser();
-  await prisma.customer.delete({ where: { id: customerId } });
+  const organizationId = await requireOrgId();
+  await prisma.customer.deleteMany({ where: { id: customerId, organizationId } });
   revalidatePath("/customers");
   redirect("/customers");
 }

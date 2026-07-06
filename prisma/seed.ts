@@ -48,22 +48,26 @@ function pick<T>(arr: T[]): T {
 async function main() {
   console.log("Seeding database...");
 
-  await prisma.booking.deleteMany();
-  await prisma.expense.deleteMany();
-  await prisma.maintenanceLog.deleteMany();
-  await prisma.fuelLog.deleteMany();
-  await prisma.customer.deleteMany();
-  await prisma.vehicle.deleteMany();
-  await prisma.user.deleteMany();
+  // Deleting the organization cascades to every other table.
+  await prisma.organization.deleteMany();
+
+  const organization = await prisma.organization.create({
+    data: {
+      name: "Reyna Car Rentals",
+      subscriptionStatus: "ACTIVE",
+    },
+  });
+  console.log(`Created organization: ${organization.name}`);
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@example.com";
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
   await prisma.user.create({
     data: {
+      organizationId: organization.id,
       name: "Fleet Admin",
       email: adminEmail,
       passwordHash: await bcrypt.hash(adminPassword, 10),
-      role: "ADMIN",
+      role: "OWNER",
     },
   });
   console.log(`Created admin user: ${adminEmail}`);
@@ -72,6 +76,7 @@ async function main() {
   for (const v of VEHICLES) {
     const vehicle = await prisma.vehicle.create({
       data: {
+        organizationId: organization.id,
         plateNumber: v.plateNumber,
         make: v.make,
         model: v.model,
@@ -88,7 +93,9 @@ async function main() {
 
   const customers = [];
   for (const c of CUSTOMERS) {
-    customers.push(await prisma.customer.create({ data: c }));
+    customers.push(
+      await prisma.customer.create({ data: { ...c, organizationId: organization.id } })
+    );
   }
   console.log(`Created ${customers.length} customers.`);
 
@@ -115,6 +122,7 @@ async function main() {
         await prisma.booking.create({
           data: {
             vehicleId: vehicle.id,
+            organizationId: organization.id,
             customerId: pick(customers).id,
             startDate: start,
             endDate: end,
@@ -139,6 +147,7 @@ async function main() {
       await prisma.booking.create({
         data: {
           vehicleId: vehicle.id,
+          organizationId: organization.id,
           customerId: pick(customers).id,
           startDate: start,
           endDate: end,
@@ -172,6 +181,7 @@ async function main() {
       await prisma.expense.create({
         data: {
           vehicleId: vehicle.id,
+          organizationId: organization.id,
           category: "CLEANING",
           amount: randInt(300, 800),
           date: monthDate,
@@ -183,6 +193,7 @@ async function main() {
     await prisma.expense.create({
       data: {
         vehicleId: vehicle.id,
+        organizationId: organization.id,
         category: "INSURANCE",
         amount: randInt(8000, 15000),
         date: new Date(startWindow.getFullYear(), startWindow.getMonth() + 1, 5),
@@ -193,6 +204,7 @@ async function main() {
     await prisma.expense.create({
       data: {
         vehicleId: vehicle.id,
+        organizationId: organization.id,
         category: "REGISTRATION",
         amount: randInt(2000, 4000),
         date: new Date(startWindow.getFullYear(), startWindow.getMonth() + 2, 15),
@@ -210,6 +222,7 @@ async function main() {
       await prisma.maintenanceLog.create({
         data: {
           vehicleId: vehicle.id,
+          organizationId: organization.id,
           type: pick(["Oil Change", "Tire Rotation", "Brake Inspection", "General Checkup"]),
           date,
           cost: randInt(1500, 4500),
@@ -231,6 +244,7 @@ async function main() {
       await prisma.fuelLog.create({
         data: {
           vehicleId: vehicle.id,
+          organizationId: organization.id,
           date: new Date(cursor),
           liters,
           cost: liters * 65,

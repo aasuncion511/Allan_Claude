@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default async function MaintenancePage() {
+  const organizationId = await requireOrgId();
   const logs = await prisma.maintenanceLog.findMany({
+    where: { organizationId },
     include: { vehicle: true },
     orderBy: { date: "desc" },
   });

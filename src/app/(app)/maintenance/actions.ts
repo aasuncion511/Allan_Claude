@@ -1,19 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireOrgId } from "@/lib/auth";
 
 export async function createMaintenanceLog(formData: FormData) {
-  await requireUser();
+  const organizationId = await requireOrgId();
   const vehicleId = String(formData.get("vehicleId"));
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: vehicleId, organizationId },
+  });
+  if (!vehicle) notFound();
+
   const nextDueDateRaw = String(formData.get("nextDueDate") ?? "").trim();
   const nextDueOdometerRaw = String(formData.get("nextDueOdometer") ?? "").trim();
   const odometerRaw = String(formData.get("odometer") ?? "").trim();
 
   await prisma.maintenanceLog.create({
     data: {
+      organizationId,
       vehicleId,
       type: String(formData.get("type") ?? "").trim(),
       date: new Date(String(formData.get("date"))),
@@ -28,10 +34,9 @@ export async function createMaintenanceLog(formData: FormData) {
 
   if (odometerRaw) {
     const odometer = Number(odometerRaw);
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
-    if (vehicle && odometer > vehicle.odometer) {
-      await prisma.vehicle.update({
-        where: { id: vehicleId },
+    if (odometer > vehicle.odometer) {
+      await prisma.vehicle.updateMany({
+        where: { id: vehicleId, organizationId },
         data: { odometer },
       });
     }
@@ -44,8 +49,12 @@ export async function createMaintenanceLog(formData: FormData) {
 }
 
 export async function deleteMaintenanceLog(logId: string) {
-  await requireUser();
-  const log = await prisma.maintenanceLog.delete({ where: { id: logId } });
+  const organizationId = await requireOrgId();
+  const log = await prisma.maintenanceLog.findFirst({
+    where: { id: logId, organizationId },
+  });
+  if (!log) notFound();
+  await prisma.maintenanceLog.deleteMany({ where: { id: logId, organizationId } });
   revalidatePath("/maintenance");
   revalidatePath(`/fleet/${log.vehicleId}`);
   revalidatePath("/dashboard");

@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default async function ExpensesPage() {
+  const organizationId = await requireOrgId();
   const [expenses, fuelLogs, maintenanceLogs] = await Promise.all([
     prisma.expense.findMany({
+      where: { organizationId },
       include: { vehicle: true },
       orderBy: { date: "desc" },
     }),
-    prisma.fuelLog.aggregate({ _sum: { cost: true } }),
-    prisma.maintenanceLog.aggregate({ _sum: { cost: true } }),
+    prisma.fuelLog.aggregate({ where: { organizationId }, _sum: { cost: true } }),
+    prisma.maintenanceLog.aggregate({ where: { organizationId }, _sum: { cost: true } }),
   ]);
 
   const otherTotal = expenses.reduce((sum, e) => sum + e.amount, 0);

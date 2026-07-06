@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { BookingForm } from "@/components/booking-form";
 import { createBooking } from "../actions";
@@ -9,9 +10,10 @@ export default async function NewBookingPage({
   searchParams: Promise<{ vehicleId?: string }>;
 }) {
   const { vehicleId } = await searchParams;
+  const organizationId = await requireOrgId();
   const [vehicles, customers] = await Promise.all([
-    prisma.vehicle.findMany({ orderBy: { plateNumber: "asc" } }),
-    prisma.customer.findMany({ orderBy: { name: "asc" } }),
+    prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),
+    prisma.customer.findMany({ where: { organizationId }, orderBy: { name: "asc" } }),
   ]);
 
   return (

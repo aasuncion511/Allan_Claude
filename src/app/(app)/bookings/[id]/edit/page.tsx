@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { requireOrgId } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { BookingForm } from "@/components/booking-form";
 import { updateBooking, deleteBooking } from "../../actions";
@@ -10,10 +11,11 @@ export default async function EditBookingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const organizationId = await requireOrgId();
   const [booking, vehicles, customers] = await Promise.all([
-    prisma.booking.findUnique({ where: { id } }),
-    prisma.vehicle.findMany({ orderBy: { plateNumber: "asc" } }),
-    prisma.customer.findMany({ orderBy: { name: "asc" } }),
+    prisma.booking.findFirst({ where: { id, organizationId } }),
+    prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),
+    prisma.customer.findMany({ where: { organizationId }, orderBy: { name: "asc" } }),
   ]);
   if (!booking) notFound();
 
