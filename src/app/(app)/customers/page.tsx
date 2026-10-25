@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 
 export default async function CustomersPage() {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("customers");
   const customers = await prisma.customer.findMany({
     where: { organizationId },
     orderBy: { name: "asc" },

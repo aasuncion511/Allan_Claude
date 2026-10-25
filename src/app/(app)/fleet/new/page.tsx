@@ -1,8 +1,10 @@
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { VehicleForm } from "@/components/vehicle-form";
 import { createVehicle } from "../actions";
 
-export default function NewVehiclePage() {
+export default async function NewVehiclePage() {
+  await requirePermission("fleet");
   return (
     <div className="max-w-2xl">
       <PageHeader title="Add Unit" description="Register a new vehicle in your fleet" />

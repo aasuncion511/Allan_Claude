@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 type BookingStatus = "RESERVED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
@@ -66,7 +66,7 @@ async function assertOwnedByOrg(organizationId: string, vehicleId: string, custo
 }
 
 export async function createBooking(formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("bookings");
   const data = parseBookingForm(formData);
   await assertOwnedByOrg(organizationId, data.vehicleId, data.customerId);
   await prisma.booking.create({ data: { ...data, organizationId } });
@@ -79,7 +79,7 @@ export async function createBooking(formData: FormData) {
 }
 
 export async function updateBooking(bookingId: string, formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("bookings");
   const data = parseBookingForm(formData);
   await assertOwnedByOrg(organizationId, data.vehicleId, data.customerId);
   const existing = await prisma.booking.findFirst({
@@ -102,7 +102,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
 }
 
 export async function deleteBooking(bookingId: string) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("bookings");
   const booking = await prisma.booking.findFirst({
     where: { id: bookingId, organizationId },
   });

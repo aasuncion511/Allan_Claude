@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default async function ExpensesPage() {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("expenses");
   const [expenses, fuelLogs, maintenanceLogs] = await Promise.all([
     prisma.expense.findMany({
       where: { organizationId },

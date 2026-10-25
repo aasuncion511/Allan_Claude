@@ -9,12 +9,12 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter });
 
 const VEHICLES = [
-  { plateNumber: "NBW 1234", make: "Toyota", model: "Vios", year: 2023, color: "White", dailyRate: 2000, odometerStart: 8000 },
-  { plateNumber: "NBW 5678", make: "Toyota", model: "Innova", year: 2022, color: "Silver", dailyRate: 3200, odometerStart: 21000 },
-  { plateNumber: "NCP 2211", make: "Mitsubishi", model: "Xpander", year: 2023, color: "Red", dailyRate: 2800, odometerStart: 12500 },
-  { plateNumber: "NDR 4590", make: "Honda", model: "City", year: 2021, color: "Black", dailyRate: 2200, odometerStart: 35000 },
-  { plateNumber: "NEF 7788", make: "Toyota", model: "Hiace", year: 2020, color: "White", dailyRate: 5500, odometerStart: 62000 },
-  { plateNumber: "NGH 3345", make: "Nissan", model: "Almera", year: 2022, color: "Gray", dailyRate: 1900, odometerStart: 18000 },
+  { plateNumber: "NBW 1234", make: "Toyota", model: "Vios", year: 2023, color: "White", dailyRate: 2000, odometerStart: 8000, category: "Sedan", seats: 5, transmission: "Automatic", featured: true, description: "A fuel-efficient sedan, perfect for city drives and out-of-town trips alike." },
+  { plateNumber: "NBW 5678", make: "Toyota", model: "Innova", year: 2022, color: "Silver", dailyRate: 3200, odometerStart: 21000, category: "Van", seats: 8, transmission: "Automatic", featured: true, description: "Spacious 8-seater, ideal for family outings and group travel." },
+  { plateNumber: "NCP 2211", make: "Mitsubishi", model: "Xpander", year: 2023, color: "Red", dailyRate: 2800, odometerStart: 12500, category: "MPV", seats: 7, transmission: "Automatic", featured: true, description: "A stylish, comfortable MPV with room for the whole family." },
+  { plateNumber: "NDR 4590", make: "Honda", model: "City", year: 2021, color: "Black", dailyRate: 2200, odometerStart: 35000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Reliable and economical — a great everyday sedan." },
+  { plateNumber: "NEF 7788", make: "Toyota", model: "Hiace", year: 2020, color: "White", dailyRate: 5500, odometerStart: 62000, category: "Van", seats: 12, transmission: "Manual", featured: true, description: "Our biggest van — perfect for large groups, airport transfers, and tours." },
+  { plateNumber: "NGH 3345", make: "Nissan", model: "Almera", year: 2022, color: "Gray", dailyRate: 1900, odometerStart: 18000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Our most affordable daily driver, without compromising on comfort." },
 ];
 
 const CUSTOMERS = [
@@ -26,6 +26,19 @@ const CUSTOMERS = [
   { name: "Paolo Mendoza", phone: "+63 917 100 2006", email: "paolo.mendoza@example.com", driverLicense: "N06-23-456794" },
   { name: "Andrea Cruz", phone: "+63 917 100 2007", email: "andrea.cruz@example.com", driverLicense: "N07-23-456795" },
   { name: "Ramon Torres", phone: "+63 917 100 2008", email: "ramon.torres@example.com", driverLicense: "N08-23-456796" },
+];
+
+const FAQS = [
+  { question: "What documents do I need to rent a car?", answer: "Two valid IDs (including your driver's license) and proof of billing." },
+  { question: "Is the reservation fee refundable?", answer: "No, the reservation fee is non-refundable once a unit is confirmed for your dates." },
+  { question: "What is excluded from the rental rate?", answer: "Fuel is not included in the rental fee." },
+  { question: "Do you offer driver services?", answer: "Yes — vans and select vehicles are available with a professional driver for an additional fee." },
+];
+
+const TESTIMONIALS = [
+  { authorName: "Arjay S.", quote: "Fast and smooth transaction! Very clear on the charges. The car was clean, well-maintained, and ran perfectly. Highly recommended!" },
+  { authorName: "Hannah S.", quote: "From my first inquiry up to the actual transaction, everything was clear and transparent. Pricing was fair and the service was reliable." },
+  { authorName: "Janah R.", quote: "Super responsive, fast transaction, and gave great travel tips for our trip. Highly recommended!" },
 ];
 
 function daysBetween(start: Date, end: Date) {
@@ -54,10 +67,31 @@ async function main() {
   const organization = await prisma.organization.create({
     data: {
       name: "Reyna Car Rentals",
+      slug: "reyna-car-rentals",
       subscriptionStatus: "ACTIVE",
+      tagline: "Travel Made Easy and Fun!",
+      aboutText:
+        "Reyna Car Rentals provides reliable and affordable cars for every trip — solo rides, family outings, and business travel. All our units are well-maintained and ready for the road.",
+      contactPhone: "+63 917 123 4567",
+      contactEmail: "hello@reynacarrentals.example",
+      address: "123 Osmeña St, Cagayan de Oro City",
+      facebookUrl: "https://facebook.com/reynacarrentals",
+      instagramUrl: "https://instagram.com/reynacarrentals",
+      requirementsText:
+        "Two valid government IDs (including a driver's license) and proof of billing are required to complete a booking.",
+      reservationFeeAmount: 500,
     },
   });
-  console.log(`Created organization: ${organization.name}`);
+  console.log(`Created organization: ${organization.name} (/r/${organization.slug})`);
+
+  for (const f of FAQS) {
+    await prisma.faq.create({ data: { ...f, organizationId: organization.id } });
+  }
+  for (const [i, t] of TESTIMONIALS.entries()) {
+    await prisma.testimonial.create({
+      data: { ...t, order: i, organizationId: organization.id },
+    });
+  }
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@example.com";
   const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
@@ -82,6 +116,11 @@ async function main() {
         model: v.model,
         year: v.year,
         color: v.color,
+        category: v.category,
+        seats: v.seats,
+        transmission: v.transmission,
+        description: v.description,
+        featured: v.featured,
         dailyRate: v.dailyRate,
         odometer: v.odometerStart,
         status: "AVAILABLE",
@@ -97,7 +136,18 @@ async function main() {
       await prisma.customer.create({ data: { ...c, organizationId: organization.id } })
     );
   }
-  console.log(`Created ${customers.length} customers.`);
+  // One self-registered customer, to exercise the storefront login path.
+  const selfServeCustomer = await prisma.customer.create({
+    data: {
+      organizationId: organization.id,
+      name: "Liza Fernandez",
+      email: "liza.fernandez@example.com",
+      phone: "+63 917 100 2099",
+      passwordHash: await bcrypt.hash("CustomerPass123", 10),
+    },
+  });
+  customers.push(selfServeCustomer);
+  console.log(`Created ${customers.length} customers (including 1 self-registered login).`);
 
   const today = new Date();
   const monthsBack = 8; // generate history for the trailing 8 months

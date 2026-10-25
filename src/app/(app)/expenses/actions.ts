@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 export async function createExpense(formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("expenses");
   const vehicleId = String(formData.get("vehicleId"));
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, organizationId },
@@ -36,7 +36,7 @@ export async function createExpense(formData: FormData) {
 }
 
 export async function deleteExpense(expenseId: string) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("expenses");
   const expense = await prisma.expense.findFirst({
     where: { id: expenseId, organizationId },
   });

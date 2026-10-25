@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth";
 import { setSessionCookie, clearSessionCookie } from "@/lib/session";
+import { firstAccessibleRoute } from "@/lib/permissions";
 
 export type LoginState = { error?: string } | undefined;
 
@@ -31,7 +32,7 @@ export async function loginAction(
   }
 
   await setSessionCookie(user.id);
-  redirect("/dashboard");
+  redirect(firstAccessibleRoute(user));
 }
 
 export async function logoutAction() {

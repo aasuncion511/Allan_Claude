@@ -3,25 +3,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/login/actions";
+import type { PermissionKey } from "@/lib/permissions";
 
-const LINKS = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/fleet", label: "Fleet", icon: "🚗" },
-  { href: "/bookings", label: "Bookings", icon: "📅" },
-  { href: "/customers", label: "Customers", icon: "👥" },
-  { href: "/expenses", label: "Expenses", icon: "🧾" },
-  { href: "/maintenance", label: "Maintenance", icon: "🔧" },
+const LINKS: { href: string; label: string; icon: string; permKey: PermissionKey }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: "📊", permKey: "dashboard" },
+  { href: "/fleet", label: "Fleet", icon: "🚗", permKey: "fleet" },
+  { href: "/bookings", label: "Bookings", icon: "📅", permKey: "bookings" },
+  { href: "/customers", label: "Customers", icon: "👥", permKey: "customers" },
+  { href: "/expenses", label: "Expenses", icon: "🧾", permKey: "expenses" },
+  { href: "/maintenance", label: "Maintenance", icon: "🔧", permKey: "maintenance" },
 ];
 
 const SETTINGS_LINKS = [
   { href: "/settings/team", label: "Team", icon: "🧑‍🤝‍🧑" },
   { href: "/settings/billing", label: "Billing", icon: "💳" },
+  { href: "/settings/storefront", label: "Storefront", icon: "🌐", permKey: "storefrontSettings" as PermissionKey },
 ];
 
-export function Nav({ userName, orgName }: { userName: string; orgName: string }) {
+export function Nav({
+  userName,
+  orgName,
+  permissions,
+}: {
+  userName: string;
+  orgName: string;
+  permissions: Record<PermissionKey, boolean>;
+}) {
   const pathname = usePathname();
 
-  const renderLink = (link: { href: string; label: string; icon: string }) => {
+  const renderLink = (link: { href: string; label: string; icon: string; permKey?: PermissionKey }) => {
     const active = pathname === link.href || pathname.startsWith(link.href + "/");
     return (
       <Link
@@ -39,6 +49,11 @@ export function Nav({ userName, orgName }: { userName: string; orgName: string }
     );
   };
 
+  const visibleLinks = LINKS.filter((l) => permissions[l.permKey]);
+  const visibleSettingsLinks = SETTINGS_LINKS.filter(
+    (l) => !l.permKey || permissions[l.permKey]
+  );
+
   return (
     <aside className="flex h-screen w-60 flex-none flex-col border-r border-slate-800 bg-slate-950 text-slate-200">
       <div className="border-b border-slate-800 px-5 py-5">
@@ -49,9 +64,11 @@ export function Nav({ userName, orgName }: { userName: string; orgName: string }
         <p className="mt-1 truncate text-xs text-slate-500">{orgName}</p>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {LINKS.map(renderLink)}
-        <div className="my-2 border-t border-slate-800" />
-        {SETTINGS_LINKS.map(renderLink)}
+        {visibleLinks.map(renderLink)}
+        {visibleSettingsLinks.length > 0 && (
+          <div className="my-2 border-t border-slate-800" />
+        )}
+        {visibleSettingsLinks.map(renderLink)}
       </nav>
       <div className="border-t border-slate-800 px-4 py-4">
         <p className="mb-2 truncate text-xs text-slate-500">

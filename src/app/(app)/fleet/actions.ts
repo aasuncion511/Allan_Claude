@@ -3,16 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 function parseVehicleForm(formData: FormData) {
+  const seatsRaw = String(formData.get("seats") ?? "").trim();
   return {
     plateNumber: String(formData.get("plateNumber") ?? "").trim(),
     make: String(formData.get("make") ?? "").trim(),
     model: String(formData.get("model") ?? "").trim(),
     year: Number(formData.get("year")),
     color: String(formData.get("color") ?? "").trim() || null,
+    category: String(formData.get("category") ?? "").trim() || null,
+    seats: seatsRaw ? Number(seatsRaw) : null,
+    transmission: String(formData.get("transmission") ?? "").trim() || null,
+    description: String(formData.get("description") ?? "").trim() || null,
     photoUrl: String(formData.get("photoUrl") ?? "").trim() || null,
+    featured: formData.get("featured") === "on",
     dailyRate: Number(formData.get("dailyRate")),
     status: String(formData.get("status") ?? "AVAILABLE") as
       | "AVAILABLE"
@@ -26,7 +32,7 @@ function parseVehicleForm(formData: FormData) {
 }
 
 export async function createVehicle(formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("fleet");
   const data = parseVehicleForm(formData);
   const vehicle = await prisma.vehicle.create({ data: { ...data, organizationId } });
   revalidatePath("/fleet");
@@ -34,7 +40,7 @@ export async function createVehicle(formData: FormData) {
 }
 
 export async function updateVehicle(vehicleId: string, formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("fleet");
   const data = parseVehicleForm(formData);
   const result = await prisma.vehicle.updateMany({
     where: { id: vehicleId, organizationId },
@@ -47,7 +53,7 @@ export async function updateVehicle(vehicleId: string, formData: FormData) {
 }
 
 export async function deleteVehicle(vehicleId: string) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("fleet");
   await prisma.vehicle.deleteMany({ where: { id: vehicleId, organizationId } });
   revalidatePath("/fleet");
   redirect("/fleet");

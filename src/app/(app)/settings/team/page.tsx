@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
@@ -37,20 +38,38 @@ export default async function TeamPage() {
                 <tr key={m.id} className="hover:bg-slate-800/50">
                   <td className="px-4 py-3 text-slate-100">{m.name}</td>
                   <td className="px-4 py-3 text-slate-300">{m.email}</td>
-                  <td className="px-4 py-3 text-slate-300">{m.role}</td>
+                  <td className="px-4 py-3 text-slate-300">
+                    {m.role === "OWNER" ? (
+                      <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400">
+                        Owner — full access
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-400">
+                        Staff
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-slate-300">
                     {formatDate(m.createdAt)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {user.role === "OWNER" && m.id !== user.id && (
-                      <form action={remove}>
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-red-400 hover:underline"
+                      <div className="flex items-center justify-end gap-4">
+                        <Link
+                          href={`/settings/team/${m.id}/edit`}
+                          className="text-xs font-medium text-emerald-400 hover:underline"
                         >
-                          Remove
-                        </button>
-                      </form>
+                          Permissions
+                        </Link>
+                        <form action={remove}>
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-red-400 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </form>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -71,7 +90,8 @@ export default async function TeamPage() {
         </>
       ) : (
         <p className="text-sm text-slate-500">
-          Only the account owner can add or remove teammates.
+          Only the account owner can add or remove teammates, or change what
+          they can access.
         </p>
       )}
     </div>

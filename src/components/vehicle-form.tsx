@@ -6,13 +6,21 @@ const STATUS_OPTIONS = [
   "OUT_OF_SERVICE",
 ];
 
+const CATEGORY_OPTIONS = ["Sedan", "SUV", "MPV", "Van", "Pickup", "Hatchback"];
+const TRANSMISSION_OPTIONS = ["Automatic", "Manual"];
+
 type VehicleDefaults = {
   plateNumber?: string;
   make?: string;
   model?: string;
   year?: number;
   color?: string | null;
+  category?: string | null;
+  seats?: number | null;
+  transmission?: string | null;
+  description?: string | null;
   photoUrl?: string | null;
+  featured?: boolean;
   dailyRate?: number;
   status?: string;
   odometer?: number;
@@ -119,6 +127,53 @@ export function VehicleForm({
             className={field}
           />
         </div>
+        <div>
+          <label className={label}>Category</label>
+          <select name="category" defaultValue={defaults?.category ?? ""} className={field}>
+            <option value="">—</option>
+            {CATEGORY_OPTIONS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={label}>Seats</label>
+          <input
+            name="seats"
+            type="number"
+            min={1}
+            defaultValue={defaults?.seats ?? ""}
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={label}>Transmission</label>
+          <select
+            name="transmission"
+            defaultValue={defaults?.transmission ?? ""}
+            className={field}
+          >
+            <option value="">—</option>
+            {TRANSMISSION_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center">
+          <label className="mt-5 flex items-center gap-2 text-sm text-slate-300">
+            <input
+              name="featured"
+              type="checkbox"
+              defaultChecked={defaults?.featured ?? false}
+              className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+            />
+            Feature on storefront homepage
+          </label>
+        </div>
       </div>
       <div>
         <label className={label}>Photo URL (optional)</label>
@@ -130,7 +185,16 @@ export function VehicleForm({
         />
       </div>
       <div>
-        <label className={label}>Notes</label>
+        <label className={label}>Public description (shown to renters)</label>
+        <textarea
+          name="description"
+          rows={2}
+          defaultValue={defaults?.description ?? ""}
+          className={field}
+        />
+      </div>
+      <div>
+        <label className={label}>Internal Notes</label>
         <textarea
           name="notes"
           rows={3}

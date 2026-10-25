@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 export async function createMaintenanceLog(formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("maintenance");
   const vehicleId = String(formData.get("vehicleId"));
   const vehicle = await prisma.vehicle.findFirst({
     where: { id: vehicleId, organizationId },
@@ -49,7 +49,7 @@ export async function createMaintenanceLog(formData: FormData) {
 }
 
 export async function deleteMaintenanceLog(logId: string) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("maintenance");
   const log = await prisma.maintenanceLog.findFirst({
     where: { id: logId, organizationId },
   });

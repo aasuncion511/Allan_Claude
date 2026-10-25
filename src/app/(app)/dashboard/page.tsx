@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/badge";
@@ -16,7 +16,7 @@ export default async function DashboardPage({
   searchParams: Promise<{ year?: string }>;
 }) {
   const { year: yearParam } = await searchParams;
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("dashboard");
   const [{ overall, perVehicle }, vehicles] = await Promise.all([
     getFleetSummary(organizationId),
     prisma.vehicle.findMany({ where: { organizationId } }),

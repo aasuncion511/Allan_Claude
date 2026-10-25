@@ -1,0 +1,124 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getPublicOrgBySlug } from "@/lib/public-org";
+import { getCurrentCustomer } from "@/lib/customer-auth";
+
+export default async function StorefrontLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const org = await getPublicOrgBySlug(slug);
+  if (!org) notFound();
+
+  const customer = await getCurrentCustomer();
+  const signedInHere = customer?.organizationId === org.id;
+
+  return (
+    <div className="flex min-h-screen flex-col bg-white text-slate-900">
+      <header className="border-b border-slate-200">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link href={`/r/${org.slug}`} className="flex items-center gap-2">
+            <span className="text-2xl">🚗</span>
+            <span className="text-lg font-bold">{org.name}</span>
+          </Link>
+          <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 sm:flex">
+            <Link href={`/r/${org.slug}`} className="hover:text-slate-900">
+              Home
+            </Link>
+            <Link href={`/r/${org.slug}/fleet`} className="hover:text-slate-900">
+              Our Fleet
+            </Link>
+            <Link href={`/r/${org.slug}/contact`} className="hover:text-slate-900">
+              Contact
+            </Link>
+          </nav>
+          <div className="flex items-center gap-3">
+            {signedInHere ? (
+              <Link
+                href={`/r/${org.slug}/account`}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+              >
+                My Account
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href={`/r/${org.slug}/login`}
+                  className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href={`/r/${org.slug}/fleet`}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                >
+                  Book Now
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1">{children}</main>
+
+      <footer className="border-t border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-6xl px-6 py-10">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+            <div>
+              <p className="text-lg font-bold">{org.name}</p>
+              {org.tagline && (
+                <p className="mt-1 text-sm text-slate-500">{org.tagline}</p>
+              )}
+              <div className="mt-3 flex gap-3 text-sm text-slate-500">
+                {org.facebookUrl && (
+                  <a href={org.facebookUrl} className="hover:text-slate-900">
+                    Facebook
+                  </a>
+                )}
+                {org.instagramUrl && (
+                  <a href={org.instagramUrl} className="hover:text-slate-900">
+                    Instagram
+                  </a>
+                )}
+                {org.tiktokUrl && (
+                  <a href={org.tiktokUrl} className="hover:text-slate-900">
+                    TikTok
+                  </a>
+                )}
+              </div>
+            </div>
+            <div className="text-sm text-slate-500">
+              <p className="mb-2 font-semibold text-slate-700">Contact</p>
+              {org.contactPhone && <p>{org.contactPhone}</p>}
+              {org.contactEmail && <p>{org.contactEmail}</p>}
+              {org.address && <p>{org.address}</p>}
+            </div>
+            <div className="text-sm text-slate-500">
+              <p className="mb-2 font-semibold text-slate-700">Quick Links</p>
+              <ul className="space-y-1">
+                <li>
+                  <Link href={`/r/${org.slug}/fleet`} className="hover:text-slate-900">
+                    Our Fleet
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/r/${org.slug}/contact`} className="hover:text-slate-900">
+                    Contact
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <p className="mt-8 text-xs text-slate-400">
+            © {new Date().getFullYear()} {org.name}. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}

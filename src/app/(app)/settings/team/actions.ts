@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, hashPassword } from "@/lib/auth";
+import { parsePermissionsFromForm } from "@/lib/permissions";
 
 export type InviteState = { error?: string } | undefined;
 
@@ -34,6 +35,8 @@ export async function inviteTeammate(
     return { error: "A user with this email already exists." };
   }
 
+  const permissions = parsePermissionsFromForm(formData);
+
   await prisma.user.create({
     data: {
       organizationId: user.organizationId,
@@ -41,10 +44,24 @@ export async function inviteTeammate(
       email,
       passwordHash: await hashPassword(password),
       role: "STAFF",
+      permissions,
     },
   });
 
   revalidatePath("/settings/team");
+}
+
+export async function updateTeammatePermissions(memberId: string, formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "OWNER") notFound();
+
+  const permissions = parsePermissionsFromForm(formData);
+  await prisma.user.updateMany({
+    where: { id: memberId, organizationId: user.organizationId, role: "STAFF" },
+    data: { permissions },
+  });
+  revalidatePath("/settings/team");
+  redirect("/settings/team");
 }
 
 export async function removeTeammate(memberId: string) {

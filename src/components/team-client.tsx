@@ -2,6 +2,8 @@
 
 import { useActionState, useRef, useEffect } from "react";
 import { inviteTeammate } from "@/app/(app)/settings/team/actions";
+import { PermissionCheckboxes } from "@/components/permission-checkboxes";
+import { DEFAULT_STAFF_PERMISSIONS } from "@/lib/permissions";
 
 export function InviteForm() {
   const [state, formAction, pending] = useActionState(inviteTeammate, undefined);
@@ -17,7 +19,7 @@ export function InviteForm() {
   const label = "mb-1 block text-sm font-medium text-slate-300";
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <label className={label}>Name</label>
@@ -38,6 +40,7 @@ export function InviteForm() {
           />
         </div>
       </div>
+      <PermissionCheckboxes defaults={DEFAULT_STAFF_PERMISSIONS} />
       {state?.error && (
         <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
           {state.error}

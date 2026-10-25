@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { ExpenseForm } from "@/components/expense-form";
 import { createExpense } from "../actions";
@@ -10,7 +10,7 @@ export default async function NewExpensePage({
   searchParams: Promise<{ vehicleId?: string }>;
 }) {
   const { vehicleId } = await searchParams;
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("expenses");
   const vehicles = await prisma.vehicle.findMany({
     where: { organizationId },
     orderBy: { plateNumber: "asc" },

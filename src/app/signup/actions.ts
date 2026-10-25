@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/auth";
 import { setSessionCookie } from "@/lib/session";
 import { getStripe } from "@/lib/stripe";
 import { trialEndDate } from "@/lib/subscription";
+import { uniqueOrgSlug } from "@/lib/slug";
 
 export type SignupState = { error?: string } | undefined;
 
@@ -35,6 +36,7 @@ export async function signupAction(
   const organization = await prisma.organization.create({
     data: {
       name: companyName,
+      slug: await uniqueOrgSlug(companyName),
       subscriptionStatus: "TRIALING",
       trialEndsAt: trialEndDate(),
     },

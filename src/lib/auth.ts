@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/session";
+import { hasPermission, type PermissionKey } from "@/lib/permissions";
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -33,4 +34,11 @@ export async function requireUser() {
 export async function requireOrgId(): Promise<string> {
   const user = await requireUser();
   return user.organizationId;
+}
+
+/** Gate a page or action behind a permission; OWNER always passes. */
+export async function requirePermission(key: PermissionKey) {
+  const user = await requireUser();
+  if (!hasPermission(user, key)) redirect("/403");
+  return user;
 }

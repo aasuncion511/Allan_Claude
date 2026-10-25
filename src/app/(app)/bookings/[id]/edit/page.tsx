@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { BookingForm } from "@/components/booking-form";
 import { updateBooking, deleteBooking } from "../../actions";
@@ -11,7 +11,7 @@ export default async function EditBookingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("bookings");
   const [booking, vehicles, customers] = await Promise.all([
     prisma.booking.findFirst({ where: { id, organizationId } }),
     prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),

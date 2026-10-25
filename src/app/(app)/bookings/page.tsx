@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default async function BookingsPage() {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("bookings");
   const bookings = await prisma.booking.findMany({
     where: { organizationId },
     include: { vehicle: true, customer: true },

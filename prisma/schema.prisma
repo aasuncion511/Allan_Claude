@@ -25,6 +25,19 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum BookingSource {
+  STAFF
+  ONLINE
+}
+
 enum ExpenseCategory {
   FUEL
   MAINTENANCE
@@ -51,9 +64,23 @@ enum SubscriptionStatus {
 model Organization {
   id                   String   @id @default(cuid())
   name                 String
+  slug                 String   @unique
   createdAt            DateTime @default(now())
 
-  // Stripe billing
+  // Public storefront content
+  tagline              String?
+  aboutText            String?
+  logoUrl              String?
+  heroImageUrl         String?
+  contactPhone         String?
+  contactEmail         String?
+  address              String?
+  facebookUrl          String?
+  instagramUrl         String?
+  tiktokUrl            String?
+  requirementsText     String?
+
+  // Stripe billing (organization's subscription to this SaaS)
   stripeCustomerId     String?  @unique
   stripeSubscriptionId String?  @unique
   stripePriceId        String?
@@ -62,6 +89,17 @@ model Organization {
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean  @default(false)
 
+  // PayMongo (organization's own account — collects renter payments directly)
+  paymongoSecretKey    String?
+  paymongoPublicKey    String?
+  paymongoWebhookSecret String?
+  paymongoLiveMode     Boolean  @default(false)
+  reservationFeeAmount Float    @default(500)
+
+  // GoHighLevel CRM (organization's own existing sub-account/location)
+  ghlLocationId        String?
+  ghlApiToken          String?
+
   users            User[]
   vehicles         Vehicle[]
   customers        Customer[]
@@ -69,6 +107,8 @@ model Organization {
   expenses         Expense[]
   maintenanceLogs  MaintenanceLog[]
   fuelLogs         FuelLog[]
+  faqs             Faq[]
+  testimonials     Testimonial[]
 }
 
 model User {
@@ -78,6 +118,9 @@ model User {
   email          String   @unique
   passwordHash   String
   role           UserRole @default(STAFF)
+  /// Ignored for OWNER (always full access). For STAFF, a map of permission
+  /// key -> boolean, e.g. {"fleet": true, "billing": false}. See src/lib/permissions.ts.
+  permissions    Json?
   createdAt      DateTime @default(now())
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -93,7 +136,12 @@ model Vehicle {
   model         String
   year          Int
   color         String?
+  category      String?
+  seats         Int?
+  transmission  String?
+  description   String?
   photoUrl      String?
+  featured      Boolean  @default(false)
   dailyRate     Float
   status        VehicleStatus @default(AVAILABLE)
   odometer      Int      @default(0)
@@ -120,12 +168,15 @@ model Customer {
   address        String?
   driverLicense  String?
   notes          String?
+  /// Set only when this customer self-registered on the public storefront.
+  passwordHash   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   bookings       Booking[]
 
+  @@unique([organizationId, email])
   @@index([organizationId, name])
 }
 
@@ -137,11 +188,14 @@ model Booking {
   startDate        DateTime
   endDate          DateTime
   status           BookingStatus @default(RESERVED)
+  source           BookingSource @default(STAFF)
   dailyRate        Float
   totalAmount      Float
   securityDeposit  Float    @default(0)
   depositReturned  Boolean  @default(false)
   amountPaid       Float    @default(0)
+  paymentStatus    PaymentStatus @default(UNPAID)
+  paymongoCheckoutId String?
   pickupLocation   String?
   dropoffLocation  String?
   notes            String?
@@ -156,6 +210,7 @@ model Booking {
   @@index([vehicleId])
   @@index([customerId])
   @@index([startDate, endDate])
+  @@index([paymongoCheckoutId])
 }
 
 model Expense {
@@ -219,4 +274,29 @@ model FuelLog {
   @@index([organizationId])
   @@index([vehicleId])
   @@index([date])
+}
+
+model Faq {
+  id             String   @id @default(cuid())
+  organizationId String
+  question       String
+  answer         String
+  order          Int      @default(0)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model Testimonial {
+  id             String   @id @default(cuid())
+  organizationId String
+  authorName     String
+  quote          String
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }

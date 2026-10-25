@@ -2,14 +2,31 @@
 CREATE TABLE "Organization" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "tagline" TEXT,
+    "aboutText" TEXT,
+    "logoUrl" TEXT,
+    "heroImageUrl" TEXT,
+    "contactPhone" TEXT,
+    "contactEmail" TEXT,
+    "address" TEXT,
+    "facebookUrl" TEXT,
+    "instagramUrl" TEXT,
+    "tiktokUrl" TEXT,
+    "requirementsText" TEXT,
     "stripeCustomerId" TEXT,
     "stripeSubscriptionId" TEXT,
     "stripePriceId" TEXT,
     "subscriptionStatus" TEXT NOT NULL DEFAULT 'TRIALING',
     "trialEndsAt" DATETIME,
     "currentPeriodEnd" DATETIME,
-    "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false
+    "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false,
+    "paymongoSecretKey" TEXT,
+    "paymongoPublicKey" TEXT,
+    "reservationFeeAmount" REAL NOT NULL DEFAULT 500,
+    "ghlLocationId" TEXT,
+    "ghlApiToken" TEXT
 );
 
 -- CreateTable
@@ -20,6 +37,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'STAFF',
+    "permissions" JSONB,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "User_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -33,7 +51,12 @@ CREATE TABLE "Vehicle" (
     "model" TEXT NOT NULL,
     "year" INTEGER NOT NULL,
     "color" TEXT,
+    "category" TEXT,
+    "seats" INTEGER,
+    "transmission" TEXT,
+    "description" TEXT,
     "photoUrl" TEXT,
+    "featured" BOOLEAN NOT NULL DEFAULT false,
     "dailyRate" REAL NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'AVAILABLE',
     "odometer" INTEGER NOT NULL DEFAULT 0,
@@ -53,6 +76,7 @@ CREATE TABLE "Customer" (
     "address" TEXT,
     "driverLicense" TEXT,
     "notes" TEXT,
+    "passwordHash" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "Customer_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -67,11 +91,14 @@ CREATE TABLE "Booking" (
     "startDate" DATETIME NOT NULL,
     "endDate" DATETIME NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'RESERVED',
+    "source" TEXT NOT NULL DEFAULT 'STAFF',
     "dailyRate" REAL NOT NULL,
     "totalAmount" REAL NOT NULL,
     "securityDeposit" REAL NOT NULL DEFAULT 0,
     "depositReturned" BOOLEAN NOT NULL DEFAULT false,
     "amountPaid" REAL NOT NULL DEFAULT 0,
+    "paymentStatus" TEXT NOT NULL DEFAULT 'UNPAID',
+    "paymongoCheckoutId" TEXT,
     "pickupLocation" TEXT,
     "dropoffLocation" TEXT,
     "notes" TEXT,
@@ -131,6 +158,30 @@ CREATE TABLE "FuelLog" (
     CONSTRAINT "FuelLog_vehicleId_fkey" FOREIGN KEY ("vehicleId") REFERENCES "Vehicle" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
+CREATE TABLE "Faq" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT NOT NULL,
+    "question" TEXT NOT NULL,
+    "answer" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "Faq_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "Testimonial" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT NOT NULL,
+    "authorName" TEXT NOT NULL,
+    "quote" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Testimonial_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Organization_slug_key" ON "Organization"("slug");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Organization_stripeCustomerId_key" ON "Organization"("stripeCustomerId");
 
@@ -153,6 +204,9 @@ CREATE UNIQUE INDEX "Vehicle_organizationId_plateNumber_key" ON "Vehicle"("organ
 CREATE INDEX "Customer_organizationId_name_idx" ON "Customer"("organizationId", "name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Customer_organizationId_email_key" ON "Customer"("organizationId", "email");
+
+-- CreateIndex
 CREATE INDEX "Booking_organizationId_idx" ON "Booking"("organizationId");
 
 -- CreateIndex
@@ -163,6 +217,9 @@ CREATE INDEX "Booking_customerId_idx" ON "Booking"("customerId");
 
 -- CreateIndex
 CREATE INDEX "Booking_startDate_endDate_idx" ON "Booking"("startDate", "endDate");
+
+-- CreateIndex
+CREATE INDEX "Booking_paymongoCheckoutId_idx" ON "Booking"("paymongoCheckoutId");
 
 -- CreateIndex
 CREATE INDEX "Expense_organizationId_idx" ON "Expense"("organizationId");
@@ -196,3 +253,9 @@ CREATE INDEX "FuelLog_vehicleId_idx" ON "FuelLog"("vehicleId");
 
 -- CreateIndex
 CREATE INDEX "FuelLog_date_idx" ON "FuelLog"("date");
+
+-- CreateIndex
+CREATE INDEX "Faq_organizationId_idx" ON "Faq"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "Testimonial_organizationId_idx" ON "Testimonial"("organizationId");

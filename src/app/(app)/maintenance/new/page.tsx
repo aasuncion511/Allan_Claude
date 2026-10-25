@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { MaintenanceForm } from "@/components/maintenance-form";
 import { createMaintenanceLog } from "../actions";
@@ -10,7 +10,7 @@ export default async function NewMaintenancePage({
   searchParams: Promise<{ vehicleId?: string }>;
 }) {
   const { vehicleId } = await searchParams;
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("maintenance");
   const vehicles = await prisma.vehicle.findMany({
     where: { organizationId },
     orderBy: { plateNumber: "asc" },

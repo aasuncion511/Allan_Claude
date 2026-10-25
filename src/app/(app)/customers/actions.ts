@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireOrgId } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 function parseCustomerForm(formData: FormData) {
   return {
@@ -17,7 +17,7 @@ function parseCustomerForm(formData: FormData) {
 }
 
 export async function createCustomer(formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("customers");
   const data = parseCustomerForm(formData);
   const customer = await prisma.customer.create({ data: { ...data, organizationId } });
   revalidatePath("/customers");
@@ -25,7 +25,7 @@ export async function createCustomer(formData: FormData) {
 }
 
 export async function updateCustomer(customerId: string, formData: FormData) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("customers");
   const data = parseCustomerForm(formData);
   const result = await prisma.customer.updateMany({
     where: { id: customerId, organizationId },
@@ -38,7 +38,7 @@ export async function updateCustomer(customerId: string, formData: FormData) {
 }
 
 export async function deleteCustomer(customerId: string) {
-  const organizationId = await requireOrgId();
+  const { organizationId } = await requirePermission("customers");
   await prisma.customer.deleteMany({ where: { id: customerId, organizationId } });
   revalidatePath("/customers");
   redirect("/customers");
