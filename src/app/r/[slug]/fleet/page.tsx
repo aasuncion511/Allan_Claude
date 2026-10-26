@@ -19,7 +19,7 @@ export default async function StorefrontFleetPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
-      <h1 className="text-3xl font-bold text-slate-900">Our Fleet</h1>
+      <h1 className="text-3xl font-bold text-ink">Our Fleet</h1>
       <p className="mt-2 text-slate-600">
         {vehicles.length} vehicle{vehicles.length === 1 ? "" : "s"} available with {org.name}.
       </p>
@@ -29,7 +29,7 @@ export default async function StorefrontFleetPage({
         ))}
       </div>
       {vehicles.length === 0 && (
-        <p className="mt-12 text-center text-slate-500">
+        <p className="mt-12 text-center text-ink-soft">
           No vehicles are listed yet — check back soon.
         </p>
       )}

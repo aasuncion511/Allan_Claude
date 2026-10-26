@@ -19,16 +19,16 @@ export default async function CustomersPage() {
         actions={
           <Link
             href="/customers/new"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             + Add Customer
           </Link>
         }
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Phone</th>
@@ -36,20 +36,20 @@ export default async function CustomersPage() {
               <th className="px-4 py-3">Bookings</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {customers.map((c) => (
-              <tr key={c.id} className="hover:bg-slate-800/50">
+              <tr key={c.id} className="hover:bg-canvas">
                 <td className="px-4 py-3">
                   <Link
                     href={`/customers/${c.id}`}
-                    className="font-medium text-slate-100 hover:text-emerald-400"
+                    className="font-medium text-ink hover:text-brand-dark"
                   >
                     {c.name}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-300">{c.phone}</td>
-                <td className="px-4 py-3 text-slate-300">{c.email ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">{c.phone}</td>
+                <td className="px-4 py-3 text-ink">{c.email ?? "—"}</td>
+                <td className="px-4 py-3 text-ink">
                   {c._count.bookings}
                 </td>
               </tr>
@@ -58,10 +58,10 @@ export default async function CustomersPage() {
               <tr>
                 <td
                   colSpan={4}
-                  className="px-4 py-10 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-ink-soft"
                 >
                   No customers yet.{" "}
-                  <Link href="/customers/new" className="text-emerald-400">
+                  <Link href="/customers/new" className="text-brand">
                     Add your first customer
                   </Link>
                   .

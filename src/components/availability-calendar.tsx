@@ -29,8 +29,8 @@ function MonthGrid({ year, month, blocked, today }: { year: number; month: numbe
 
   return (
     <div>
-      <p className="mb-2 text-center text-sm font-semibold text-slate-700">{label}</p>
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-slate-400">
+      <p className="mb-2 text-center text-sm font-semibold text-ink">{label}</p>
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-ink-soft">
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
           <div key={i}>{d}</div>
         ))}
@@ -47,10 +47,10 @@ function MonthGrid({ year, month, blocked, today }: { year: number; month: numbe
               className={
                 "flex h-7 items-center justify-center rounded text-xs " +
                 (isPast
-                  ? "text-slate-300"
+                  ? "text-ink"
                   : isBlocked
-                    ? "bg-red-100 text-red-700 line-through"
-                    : "bg-emerald-50 text-emerald-800")
+                    ? "bg-danger-surface text-danger-text line-through"
+                    : "bg-success-surface text-brand")
               }
             >
               {day}
@@ -69,7 +69,7 @@ export function AvailabilityCalendar({ blockedRanges }: { blockedRanges: Blocked
   const today = toKey(now);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-line bg-white p-4">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <MonthGrid year={now.getFullYear()} month={now.getMonth()} blocked={blocked} today={today} />
         <MonthGrid
@@ -79,12 +79,12 @@ export function AvailabilityCalendar({ blockedRanges }: { blockedRanges: Blocked
           today={today}
         />
       </div>
-      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-500">
+      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-ink-soft">
         <span className="flex items-center gap-1">
-          <span className="h-3 w-3 rounded bg-emerald-50" /> Available
+          <span className="h-3 w-3 rounded bg-success-surface" /> Available
         </span>
         <span className="flex items-center gap-1">
-          <span className="h-3 w-3 rounded bg-red-100" /> Booked / Held
+          <span className="h-3 w-3 rounded bg-danger-surface" /> Booked / Held
         </span>
       </div>
     </div>

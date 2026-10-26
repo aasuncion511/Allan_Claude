@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { logoutAction } from "@/app/login/actions";
 import type { PermissionKey } from "@/lib/permissions";
 
@@ -36,6 +37,7 @@ export function Nav({
   permissions: Record<PermissionKey, boolean>;
 }) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   const renderLink = (link: { href: string; label: string; icon: string; permKey?: PermissionKey }) => {
     const active = pathname === link.href || pathname.startsWith(link.href + "/");
@@ -43,10 +45,11 @@ export function Nav({
       <Link
         key={link.href}
         href={link.href}
+        onClick={() => setOpen(false)}
         className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
           active
-            ? "bg-emerald-600/15 text-emerald-400"
-            : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
+            ? "bg-nav-active text-brand-deep"
+            : "text-white/70 hover:bg-white/10 hover:text-white"
         }`}
       >
         <span>{link.icon}</span>
@@ -61,34 +64,77 @@ export function Nav({
   );
 
   return (
-    <aside className="flex h-screen w-60 flex-none flex-col border-r border-slate-800 bg-slate-950 text-slate-200">
-      <div className="border-b border-slate-800 px-5 py-5">
+    <>
+      <div className="flex items-center justify-between bg-brand-deep px-4 py-3 text-white md:hidden">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🚗</span>
-          <span className="font-semibold text-slate-50">Fleet Manager</span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-sm">
+            🚗
+          </span>
+          <span className="text-sm font-semibold">Fleet Manager</span>
         </div>
-        <p className="mt-1 truncate text-xs text-slate-500">{orgName}</p>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          className="rounded-lg p-2 text-white/80 hover:bg-white/10"
+        >
+          ☰
+        </button>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {visibleLinks.map(renderLink)}
-        {visibleSettingsLinks.length > 0 && (
-          <div className="my-2 border-t border-slate-800" />
-        )}
-        {visibleSettingsLinks.map(renderLink)}
-      </nav>
-      <div className="border-t border-slate-800 px-4 py-4">
-        <p className="mb-2 truncate text-xs text-slate-500">
-          Signed in as <span className="text-slate-300">{userName}</span>
-        </p>
-        <form action={logoutAction}>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-ink/40 md:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-none flex-col bg-brand-deep text-white transition-transform duration-200 md:static md:z-auto md:w-60 md:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base">
+                🚗
+              </span>
+              <span className="font-semibold text-white">Fleet Manager</span>
+            </div>
+            <p className="mt-1 truncate text-xs text-white/50">{orgName}</p>
+          </div>
           <button
-            type="submit"
-            className="w-full rounded-lg border border-slate-800 px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-900 hover:text-slate-100"
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+            className="rounded-lg p-1 text-white/70 hover:bg-white/10 md:hidden"
           >
-            Sign out
+            ✕
           </button>
-        </form>
-      </div>
-    </aside>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          {visibleLinks.map(renderLink)}
+          {visibleSettingsLinks.length > 0 && (
+            <div className="my-2 border-t border-white/10" />
+          )}
+          {visibleSettingsLinks.map(renderLink)}
+        </nav>
+        <div className="border-t border-white/10 px-4 py-4">
+          <p className="mb-2 truncate text-xs text-white/50">
+            Signed in as <span className="text-white/80">{userName}</span>
+          </p>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="w-full rounded-lg border border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+      </aside>
+    </>
   );
 }

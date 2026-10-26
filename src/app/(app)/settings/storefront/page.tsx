@@ -13,8 +13,8 @@ import {
 } from "./actions";
 
 const field =
-  "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-500";
-const label = "mb-1 block text-sm font-medium text-slate-300";
+  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+const label = "mb-1 block text-sm font-medium text-ink";
 
 export default async function StorefrontSettingsPage() {
   const user = await requirePermission("storefrontSettings");
@@ -39,25 +39,25 @@ export default async function StorefrontSettingsPage() {
         description="What renters see on your public booking site, plus payments and CRM."
       />
 
-      <section className="rounded-xl border border-slate-800 bg-slate-950 p-6">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Your Public Booking Site
         </h2>
         <a
           href={publicUrl}
           target="_blank"
           rel="noreferrer"
-          className="text-emerald-400 hover:underline"
+          className="text-brand hover:underline"
         >
           {publicUrl}
         </a>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-ink-soft">
           Share this link anywhere — social media, ads, your old website.
         </p>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-950 p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Public Profile
         </h2>
         <form action={updateStorefrontProfile} className="space-y-4">
@@ -106,24 +106,24 @@ export default async function StorefrontSettingsPage() {
               className={field}
             />
           </div>
-          <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save Profile
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-950 p-6">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Online Payments (PayMongo)
         </h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <p className="mb-4 text-xs text-ink-soft">
           Renters pay the reservation fee straight into your own PayMongo
           account — we never touch the money. Create an account at{" "}
-          <span className="text-slate-400">paymongo.com</span>, grab your
+          <span className="text-ink-soft">paymongo.com</span>, grab your
           keys, and register a webhook pointed at the URL below.
         </p>
-        <div className="mb-4 rounded-lg bg-slate-900 px-3 py-2 text-xs text-slate-400">
-          Webhook URL: <span className="font-mono text-slate-300">{webhookUrl}</span>
+        <div className="mb-4 rounded-lg bg-surface px-3 py-2 text-xs text-ink-soft">
+          Webhook URL: <span className="font-mono text-ink">{webhookUrl}</span>
         </div>
         <form action={updatePaymentSettings} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -167,7 +167,7 @@ export default async function StorefrontSettingsPage() {
                 defaultValue={org.reservationFeeAmount}
                 className={field}
               />
-              <p className="mt-1 text-xs text-slate-500">Confirms a booking instantly.</p>
+              <p className="mt-1 text-xs text-ink-soft">Confirms a booking instantly.</p>
             </div>
             <div>
               <label className={label}>2-Hour Hold Fee (₱)</label>
@@ -178,31 +178,31 @@ export default async function StorefrontSettingsPage() {
                 defaultValue={org.holdFeeAmount}
                 className={field}
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-ink-soft">
                 Non-refundable, credited toward the reservation fee if confirmed in time.
               </p>
             </div>
-            <label className="mt-6 flex items-center gap-2 text-sm text-slate-300">
+            <label className="mt-6 flex items-center gap-2 text-sm text-ink">
               <input
                 name="paymongoLiveMode"
                 type="checkbox"
                 defaultChecked={org.paymongoLiveMode}
-                className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+                className="h-4 w-4 rounded border-line bg-surface"
               />
               Live mode (real money)
             </label>
           </div>
-          <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save Payment Settings
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-950 p-6">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           CRM (GoHighLevel)
         </h2>
-        <p className="mb-4 text-xs text-slate-500">
+        <p className="mb-4 text-xs text-ink-soft">
           Connect your existing GHL sub-account to automatically sync new
           customers and bookings as contacts. In GHL: Settings → Business
           Profile for your Location ID, and Settings → Private Integrations
@@ -224,71 +224,71 @@ export default async function StorefrontSettingsPage() {
               />
             </div>
           </div>
-          <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save CRM Settings
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-950 p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           FAQ
         </h2>
         <div className="mb-4 space-y-2">
           {faqs.map((f) => {
             const remove = deleteFaq.bind(null, f.id);
             return (
-              <div key={f.id} className="flex items-start justify-between gap-3 rounded-lg bg-slate-900 px-3 py-2">
+              <div key={f.id} className="flex items-start justify-between gap-3 rounded-lg bg-surface px-3 py-2">
                 <div>
-                  <p className="text-sm font-medium text-slate-100">{f.question}</p>
-                  <p className="text-xs text-slate-500">{f.answer}</p>
+                  <p className="text-sm font-medium text-ink">{f.question}</p>
+                  <p className="text-xs text-ink-soft">{f.answer}</p>
                 </div>
                 <form action={remove}>
-                  <button type="submit" className="text-xs font-medium text-red-400 hover:underline">
+                  <button type="submit" className="text-xs font-medium text-danger-text hover:underline">
                     Remove
                   </button>
                 </form>
               </div>
             );
           })}
-          {faqs.length === 0 && <p className="text-sm text-slate-500">No FAQs yet.</p>}
+          {faqs.length === 0 && <p className="text-sm text-ink-soft">No FAQs yet.</p>}
         </div>
         <form action={createFaq} className="space-y-2">
           <input name="question" placeholder="Question" className={field} required />
           <textarea name="answer" placeholder="Answer" rows={2} className={field} required />
-          <button type="submit" className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800">
+          <button type="submit" className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas">
             Add FAQ
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-950 p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Testimonials
         </h2>
         <div className="mb-4 space-y-2">
           {testimonials.map((t) => {
             const remove = deleteTestimonial.bind(null, t.id);
             return (
-              <div key={t.id} className="flex items-start justify-between gap-3 rounded-lg bg-slate-900 px-3 py-2">
+              <div key={t.id} className="flex items-start justify-between gap-3 rounded-lg bg-surface px-3 py-2">
                 <div>
-                  <p className="text-sm text-slate-100">&ldquo;{t.quote}&rdquo;</p>
-                  <p className="text-xs text-slate-500">— {t.authorName}</p>
+                  <p className="text-sm text-ink">&ldquo;{t.quote}&rdquo;</p>
+                  <p className="text-xs text-ink-soft">— {t.authorName}</p>
                 </div>
                 <form action={remove}>
-                  <button type="submit" className="text-xs font-medium text-red-400 hover:underline">
+                  <button type="submit" className="text-xs font-medium text-danger-text hover:underline">
                     Remove
                   </button>
                 </form>
               </div>
             );
           })}
-          {testimonials.length === 0 && <p className="text-sm text-slate-500">No testimonials yet.</p>}
+          {testimonials.length === 0 && <p className="text-sm text-ink-soft">No testimonials yet.</p>}
         </div>
         <form action={createTestimonial} className="space-y-2">
           <input name="authorName" placeholder="Customer name" className={field} required />
           <textarea name="quote" placeholder="What they said" rows={2} className={field} required />
-          <button type="submit" className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800">
+          <button type="submit" className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas">
             Add Testimonial
           </button>
         </form>

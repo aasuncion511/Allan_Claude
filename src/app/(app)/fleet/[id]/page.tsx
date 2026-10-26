@@ -67,7 +67,7 @@ export default async function VehicleDetailPage({
           <>
             <Link
               href={`/fleet/${vehicle.id}/edit`}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas"
             >
               Edit
             </Link>
@@ -98,14 +98,14 @@ export default async function VehicleDetailPage({
         />
       </div>
 
-      <div className="mb-8 rounded-xl border border-slate-800 bg-slate-950 p-5">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <div className="mb-8 rounded-xl border border-line bg-surface p-5">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Monthly Revenue vs. Expense — {currentYear}
         </h2>
         {yearRows.length > 0 ? (
           <MonthlyChart data={yearRows} />
         ) : (
-          <p className="py-10 text-center text-sm text-slate-500">
+          <p className="py-10 text-center text-sm text-ink-soft">
             No financial activity recorded for {currentYear} yet.
           </p>
         )}
@@ -114,17 +114,17 @@ export default async function VehicleDetailPage({
       {/* Schedule */}
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">Schedule</h2>
+          <h2 className="text-lg font-semibold text-ink">Schedule</h2>
           <Link
             href={`/bookings/new?vehicleId=${vehicle.id}`}
-            className="text-sm font-medium text-emerald-400 hover:underline"
+            className="text-sm font-medium text-brand hover:underline"
           >
             + New Booking
           </Link>
         </div>
-        <div className="overflow-hidden rounded-xl border border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-xl border border-line">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Customer</th>
                 <th className="px-4 py-3">Dates</th>
@@ -132,21 +132,21 @@ export default async function VehicleDetailPage({
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-900">
+            <tbody className="divide-y divide-line bg-surface">
               {scheduleRows.map((b) => (
-                <tr key={b.id} className="hover:bg-slate-800/50">
+                <tr key={b.id} className="hover:bg-canvas">
                   <td className="px-4 py-3">
                     <Link
                       href={`/customers/${b.customer.id}`}
-                      className="text-slate-100 hover:text-emerald-400"
+                      className="text-ink hover:text-brand-dark"
                     >
                       {b.customer.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {formatDate(b.startDate)} – {formatDate(b.endDate)}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {formatCurrency(b.totalAmount)}
                   </td>
                   <td className="px-4 py-3">
@@ -158,7 +158,7 @@ export default async function VehicleDetailPage({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-slate-500"
+                    className="px-4 py-8 text-center text-ink-soft"
                   >
                     No bookings yet for this unit.
                   </td>
@@ -168,7 +168,7 @@ export default async function VehicleDetailPage({
           </table>
         </div>
         {vehicle.bookings.length > scheduleRows.length && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-ink-soft">
             Showing {scheduleRows.length} of {vehicle.bookings.length}{" "}
             bookings (all upcoming, plus the most recent completed).
           </p>
@@ -178,27 +178,27 @@ export default async function VehicleDetailPage({
       {/* Maintenance */}
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">
+          <h2 className="text-lg font-semibold text-ink">
             Maintenance
           </h2>
           <Link
             href={`/maintenance/new?vehicleId=${vehicle.id}`}
-            className="text-sm font-medium text-emerald-400 hover:underline"
+            className="text-sm font-medium text-brand hover:underline"
           >
             + Log Maintenance
           </Link>
         </div>
         {upcomingMaintenance?.nextDueDate && (
-          <p className="mb-3 rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+          <p className="mb-3 rounded-lg bg-warning-surface px-3 py-2 text-sm text-warning-text">
             Next due: {upcomingMaintenance.type} on{" "}
             {formatDate(upcomingMaintenance.nextDueDate)}
             {upcomingMaintenance.nextDueOdometer &&
               ` or ${upcomingMaintenance.nextDueOdometer.toLocaleString()} km`}
           </p>
         )}
-        <div className="overflow-hidden rounded-xl border border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-xl border border-line">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Date</th>
@@ -206,17 +206,17 @@ export default async function VehicleDetailPage({
                 <th className="px-4 py-3">Cost</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-900">
+            <tbody className="divide-y divide-line bg-surface">
               {vehicle.maintenanceLogs.slice(0, 5).map((m) => (
-                <tr key={m.id} className="hover:bg-slate-800/50">
-                  <td className="px-4 py-3 text-slate-100">{m.type}</td>
-                  <td className="px-4 py-3 text-slate-300">
+                <tr key={m.id} className="hover:bg-canvas">
+                  <td className="px-4 py-3 text-ink">{m.type}</td>
+                  <td className="px-4 py-3 text-ink">
                     {formatDate(m.date)}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {m.odometer ? `${m.odometer.toLocaleString()} km` : "—"}
                   </td>
-                  <td className="px-4 py-3 text-red-400">
+                  <td className="px-4 py-3 text-danger-text">
                     {formatCurrency(m.cost)}
                   </td>
                 </tr>
@@ -225,7 +225,7 @@ export default async function VehicleDetailPage({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-slate-500"
+                    className="px-4 py-8 text-center text-ink-soft"
                   >
                     No maintenance logged yet.
                   </td>
@@ -239,24 +239,24 @@ export default async function VehicleDetailPage({
       {/* Fuel */}
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">
+          <h2 className="text-lg font-semibold text-ink">
             Fuel Consumption
           </h2>
           <Link
             href={`/fleet/${vehicle.id}/fuel/new`}
-            className="text-sm font-medium text-emerald-400 hover:underline"
+            className="text-sm font-medium text-brand hover:underline"
           >
             + Log Fuel
           </Link>
         </div>
         {avgConsumption !== null && (
-          <p className="mb-3 rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-300">
+          <p className="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-700">
             Average consumption: {avgConsumption.toFixed(1)} L/100km
           </p>
         )}
-        <div className="overflow-hidden rounded-xl border border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-xl border border-line">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Odometer</th>
@@ -264,19 +264,19 @@ export default async function VehicleDetailPage({
                 <th className="px-4 py-3">Cost</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-900">
+            <tbody className="divide-y divide-line bg-surface">
               {vehicle.fuelLogs.slice(0, 5).map((f) => (
-                <tr key={f.id} className="hover:bg-slate-800/50">
-                  <td className="px-4 py-3 text-slate-300">
+                <tr key={f.id} className="hover:bg-canvas">
+                  <td className="px-4 py-3 text-ink">
                     {formatDate(f.date)}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {f.odometer ? `${f.odometer.toLocaleString()} km` : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {f.liters.toFixed(1)} L
                   </td>
-                  <td className="px-4 py-3 text-red-400">
+                  <td className="px-4 py-3 text-danger-text">
                     {formatCurrency(f.cost)}
                   </td>
                 </tr>
@@ -285,7 +285,7 @@ export default async function VehicleDetailPage({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-slate-500"
+                    className="px-4 py-8 text-center text-ink-soft"
                   >
                     No fuel logged yet.
                   </td>
@@ -299,19 +299,19 @@ export default async function VehicleDetailPage({
       {/* Other expenses */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">
+          <h2 className="text-lg font-semibold text-ink">
             Other Expenses
           </h2>
           <Link
             href={`/expenses/new?vehicleId=${vehicle.id}`}
-            className="text-sm font-medium text-emerald-400 hover:underline"
+            className="text-sm font-medium text-brand hover:underline"
           >
             + Add Expense
           </Link>
         </div>
-        <div className="overflow-hidden rounded-xl border border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+        <div className="overflow-x-auto rounded-xl border border-line">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
               <tr>
                 <th className="px-4 py-3">Category</th>
                 <th className="px-4 py-3">Date</th>
@@ -319,19 +319,19 @@ export default async function VehicleDetailPage({
                 <th className="px-4 py-3">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-900">
+            <tbody className="divide-y divide-line bg-surface">
               {vehicle.expenses.slice(0, 5).map((e) => (
-                <tr key={e.id} className="hover:bg-slate-800/50">
-                  <td className="px-4 py-3 text-slate-100">
+                <tr key={e.id} className="hover:bg-canvas">
+                  <td className="px-4 py-3 text-ink">
                     {e.category.replace(/_/g, " ")}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {formatDate(e.date)}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {e.vendor ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-red-400">
+                  <td className="px-4 py-3 text-danger-text">
                     {formatCurrency(e.amount)}
                   </td>
                 </tr>
@@ -340,7 +340,7 @@ export default async function VehicleDetailPage({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-8 text-center text-slate-500"
+                    className="px-4 py-8 text-center text-ink-soft"
                   >
                     No other expenses logged yet.
                   </td>

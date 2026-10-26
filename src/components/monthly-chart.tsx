@@ -30,27 +30,27 @@ export function MonthlyChart({
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis dataKey="label" stroke="#64748b" fontSize={12} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#e1e6df" />
+        <XAxis dataKey="label" stroke="#68766e" fontSize={12} />
         <YAxis
-          stroke="#64748b"
+          stroke="#68766e"
           fontSize={12}
           tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`}
         />
         <Tooltip
           contentStyle={{
-            background: "#0f172a",
-            border: "1px solid #1e293b",
+            background: "#ffffff",
+            border: "1px solid #e1e6df",
             borderRadius: 8,
             fontSize: 13,
           }}
-          labelStyle={{ color: "#e2e8f0" }}
+          labelStyle={{ color: "#172e25" }}
           formatter={(value) => formatCurrency(Number(value))}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="expense" name="Expense" fill="#f87171" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="profit" name="Net Profit" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="revenue" name="Revenue" fill="#004c25" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="expense" name="Expense" fill="#a33732" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="profit" name="Net Profit" fill="#18b957" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

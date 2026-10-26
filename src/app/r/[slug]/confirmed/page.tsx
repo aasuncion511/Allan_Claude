@@ -34,7 +34,7 @@ export default async function BookingConfirmedPage({
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-6 text-center">
       <div className="mb-4 text-5xl">{isActiveHold ? "⏳" : isCorporate ? "🏢" : "✅"}</div>
-      <h1 className="text-2xl font-bold text-slate-900">
+      <h1 className="text-2xl font-bold text-ink">
         {isActiveHold ? "Your car is held for 2 hours!" : isCorporate ? "Booking confirmed!" : "Payment received!"}
       </h1>
 
@@ -48,7 +48,7 @@ export default async function BookingConfirmedPage({
           {balance > 0 ? (
             <ConvertHoldButton slug={slug} bookingId={booking!.id} balance={balance} />
           ) : (
-            <p className="mt-2 text-sm text-emerald-700">Your hold fee already covers the reservation fee — you&apos;re confirmed!</p>
+            <p className="mt-2 text-sm text-brand">Your hold fee already covers the reservation fee — you&apos;re confirmed!</p>
           )}
         </>
       ) : isCorporate ? (
@@ -65,7 +65,7 @@ export default async function BookingConfirmedPage({
 
       <a
         href={`/r/${slug}/account`}
-        className="mt-6 inline-block rounded-lg border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        className="mt-6 inline-block rounded-lg border border-slate-300 px-6 py-3 text-sm font-semibold text-ink hover:bg-slate-50"
       >
         View My Bookings
       </a>

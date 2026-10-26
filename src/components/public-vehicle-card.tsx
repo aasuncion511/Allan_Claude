@@ -21,9 +21,9 @@ export function PublicVehicleCard({
   return (
     <Link
       href={`/r/${slug}/fleet/${vehicle.id}`}
-      className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:shadow-lg"
+      className="group overflow-hidden rounded-xl border border-line bg-white transition hover:shadow-lg"
     >
-      <div className="aspect-[4/3] bg-slate-100">
+      <div className="aspect-[4/3] bg-canvas">
         {vehicle.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -38,17 +38,17 @@ export function PublicVehicleCard({
         )}
       </div>
       <div className="p-4">
-        <p className="font-semibold text-slate-900">
+        <p className="font-semibold text-ink">
           {vehicle.make} {vehicle.model}
         </p>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <p className="mt-0.5 text-xs text-ink-soft">
           {[vehicle.category, vehicle.seats ? `${vehicle.seats} Seater` : null, vehicle.transmission]
             .filter(Boolean)
             .join(" · ")}
         </p>
-        <p className="mt-2 text-lg font-bold text-emerald-700">
+        <p className="mt-2 text-lg font-bold text-brand">
           {formatCurrency(vehicle.dailyRate)}
-          <span className="text-sm font-normal text-slate-500">/day</span>
+          <span className="text-sm font-normal text-ink-soft">/day</span>
         </p>
       </div>
     </Link>

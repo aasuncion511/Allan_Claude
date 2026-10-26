@@ -20,7 +20,7 @@ export function ChargeManager({ bookingId, charges }: { bookingId: string; charg
   const [copied, setCopied] = useState(false);
 
   const field =
-    "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-500";
+    "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
 
   async function copyLink() {
     if (!state?.checkoutUrl) return;
@@ -34,18 +34,18 @@ export function ChargeManager({ bookingId, charges }: { bookingId: string; charg
   }
 
   return (
-    <div className="mt-8 rounded-xl border border-slate-800 bg-slate-950 p-6">
-      <h2 className="mb-1 text-sm font-semibold text-slate-100">Balance & Extra Charges</h2>
-      <p className="mb-4 text-xs text-slate-500">
+    <div className="mt-8 rounded-xl border border-line bg-surface p-6">
+      <h2 className="mb-1 text-sm font-semibold text-ink">Balance & Extra Charges</h2>
+      <p className="mb-4 text-xs text-ink-soft">
         Collect the remaining balance at pick-up, or add charges after use (damage, fuel, late return) — each
         generates its own payment link so the customer pays on their own device. Verified instantly, no cash
         handled.
       </p>
 
       {charges.length > 0 && (
-        <div className="mb-4 overflow-hidden rounded-lg border border-slate-800">
+        <div className="mb-4 overflow-hidden rounded-lg border border-line">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900 uppercase tracking-wide text-slate-500">
+            <thead className="bg-surface uppercase tracking-wide text-ink-soft">
               <tr>
                 <th className="px-3 py-2">Description</th>
                 <th className="px-3 py-2">Amount</th>
@@ -53,29 +53,29 @@ export function ChargeManager({ bookingId, charges }: { bookingId: string; charg
                 <th className="px-3 py-2" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-line">
               {charges.map((c) => (
                 <tr key={c.id}>
-                  <td className="px-3 py-2 text-slate-200">{c.description}</td>
-                  <td className="px-3 py-2 text-slate-300">{formatCurrency(c.amount)}</td>
+                  <td className="px-3 py-2 text-ink">{c.description}</td>
+                  <td className="px-3 py-2 text-ink">{formatCurrency(c.amount)}</td>
                   <td className="px-3 py-2">
                     {c.status === "PAID" && (
-                      <span className="text-emerald-400">
+                      <span className="text-brand">
                         Paid {c.paidVia === "manual" ? "(manual)" : "(online)"}
                         {c.paidAt ? ` · ${formatDate(c.paidAt)}` : ""}
                       </span>
                     )}
-                    {c.status === "PENDING" && <span className="text-amber-400">Pending</span>}
-                    {c.status === "CANCELLED" && <span className="text-slate-500">Cancelled</span>}
+                    {c.status === "PENDING" && <span className="text-warning-text">Pending</span>}
+                    {c.status === "CANCELLED" && <span className="text-ink-soft">Cancelled</span>}
                   </td>
                   <td className="px-3 py-2 text-right">
                     {c.status === "PENDING" && (
                       <div className="flex justify-end gap-3">
                         <form action={markChargePaidManually.bind(null, bookingId, c.id)}>
-                          <button className="text-sky-400 hover:underline">Mark Paid (Manual)</button>
+                          <button className="text-sky-700 hover:underline">Mark Paid (Manual)</button>
                         </form>
                         <form action={cancelCharge.bind(null, bookingId, c.id)}>
-                          <button className="text-slate-500 hover:underline">Cancel</button>
+                          <button className="text-ink-soft hover:underline">Cancel</button>
                         </form>
                       </div>
                     )}
@@ -93,17 +93,17 @@ export function ChargeManager({ bookingId, charges }: { bookingId: string; charg
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
         >
           {pending ? "Creating link…" : "Create Payment Link"}
         </button>
       </form>
 
-      {state?.error && <p className="mt-3 rounded-lg bg-red-950 px-3 py-2 text-sm text-red-400">{state.error}</p>}
+      {state?.error && <p className="mt-3 rounded-lg bg-danger-surface px-3 py-2 text-sm text-danger-text">{state.error}</p>}
 
       {state?.checkoutUrl && (
-        <div className="mt-4 rounded-lg border border-emerald-900 bg-emerald-950/40 p-4">
-          <p className="mb-2 text-sm font-medium text-emerald-300">
+        <div className="mt-4 rounded-lg border border-success-text bg-success-surface p-4">
+          <p className="mb-2 text-sm font-medium text-success-text">
             Payment link ready — show this to the customer so they can pay on their own device.
           </p>
           <div className="flex items-center gap-2">
@@ -111,7 +111,7 @@ export function ChargeManager({ bookingId, charges }: { bookingId: string; charg
             <button
               type="button"
               onClick={copyLink}
-              className="shrink-0 rounded-lg border border-emerald-700 px-3 py-2 text-xs font-medium text-emerald-300 hover:bg-emerald-900"
+              className="shrink-0 rounded-lg border border-brand px-3 py-2 text-xs font-medium text-success-text hover:bg-success-surface"
             >
               {copied ? "Copied!" : "Copy Link"}
             </button>

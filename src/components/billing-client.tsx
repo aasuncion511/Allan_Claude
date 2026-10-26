@@ -17,19 +17,19 @@ export function PlanCard({
   return (
     <div
       className={`rounded-xl border p-6 ${
-        isCurrent ? "border-emerald-600 bg-emerald-600/5" : "border-slate-800 bg-slate-950"
+        isCurrent ? "border-brand bg-brand/5" : "border-line bg-canvas"
       }`}
     >
-      <h3 className="text-lg font-semibold text-slate-50">{plan.name}</h3>
-      <p className="mt-1 text-sm text-slate-400">{plan.description}</p>
-      <p className="mt-4 text-2xl font-semibold text-slate-50">
+      <h3 className="text-lg font-semibold text-ink">{plan.name}</h3>
+      <p className="mt-1 text-sm text-ink-soft">{plan.description}</p>
+      <p className="mt-4 text-2xl font-semibold text-ink">
         {formatCurrency(plan.monthlyPrice)}
-        <span className="text-sm font-normal text-slate-500">/month</span>
+        <span className="text-sm font-normal text-ink-soft">/month</span>
       </p>
-      <ul className="mt-4 space-y-2 text-sm text-slate-300">
+      <ul className="mt-4 space-y-2 text-sm text-ink">
         {plan.features.map((f) => (
           <li key={f} className="flex items-center gap-2">
-            <span className="text-emerald-400">✓</span>
+            <span className="text-brand">✓</span>
             {f}
           </li>
         ))}
@@ -37,21 +37,21 @@ export function PlanCard({
       <form action={formAction} className="mt-6">
         <input type="hidden" name="planId" value={plan.id} />
         {isCurrent ? (
-          <span className="block rounded-lg border border-emerald-700 px-4 py-2 text-center text-sm font-medium text-emerald-400">
+          <span className="block rounded-lg border border-brand px-4 py-2 text-center text-sm font-medium text-brand">
             Current plan
           </span>
         ) : (
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
           >
             {pending ? "Redirecting…" : "Choose plan"}
           </button>
         )}
       </form>
       {state?.error && (
-        <p className="mt-2 text-xs text-red-400">{state.error}</p>
+        <p className="mt-2 text-xs text-danger-text">{state.error}</p>
       )}
     </div>
   );
@@ -68,12 +68,12 @@ export function ManageBillingButton() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+        className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas disabled:opacity-50"
       >
         {pending ? "Opening…" : "Manage Billing"}
       </button>
       {state?.error && (
-        <p className="mt-2 text-xs text-red-400">{state.error}</p>
+        <p className="mt-2 text-xs text-danger-text">{state.error}</p>
       )}
     </form>
   );

@@ -31,10 +31,10 @@ export default async function CustomerAccountPage({
     <div className="mx-auto max-w-3xl px-6 py-16">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-ink">
             Hi, {customer.name.split(" ")[0]}
           </h1>
-          <p className="text-sm text-slate-500">{customer.email}</p>
+          <p className="text-sm text-ink-soft">{customer.email}</p>
         </div>
         <form action={logout}>
           <button
@@ -50,7 +50,7 @@ export default async function CustomerAccountPage({
         const balance = Math.max(0, org.reservationFeeAmount - hold.amountPaid);
         return (
           <div key={hold.id} className="mb-6 rounded-xl border border-purple-200 bg-purple-50 p-5">
-            <p className="font-semibold text-slate-900">
+            <p className="font-semibold text-ink">
               {hold.vehicle.year} {hold.vehicle.make} {hold.vehicle.model} is held until{" "}
               {hold.holdExpiresAt!.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}
             </p>
@@ -62,12 +62,12 @@ export default async function CustomerAccountPage({
         );
       })}
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-900">
+      <h2 className="mb-3 text-lg font-semibold text-ink">
         Your Bookings
       </h2>
-      <div className="overflow-hidden rounded-xl border border-slate-200">
+      <div className="overflow-hidden rounded-xl border border-line">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Dates</th>
@@ -78,7 +78,7 @@ export default async function CustomerAccountPage({
           <tbody className="divide-y divide-slate-200 bg-white">
             {bookings.map((b) => (
               <tr key={b.id}>
-                <td className="px-4 py-3 text-slate-900">
+                <td className="px-4 py-3 text-ink">
                   {b.vehicle.year} {b.vehicle.make} {b.vehicle.model}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
@@ -94,9 +94,9 @@ export default async function CustomerAccountPage({
             ))}
             {bookings.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={4} className="px-4 py-10 text-center text-ink-soft">
                   No bookings yet.{" "}
-                  <a href={`/r/${org.slug}/fleet`} className="text-emerald-700 hover:underline">
+                  <a href={`/r/${org.slug}/fleet`} className="text-brand hover:underline">
                     Browse our fleet
                   </a>
                   .

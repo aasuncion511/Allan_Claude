@@ -43,8 +43,8 @@ export function BookingForm({
   submitLabel: string;
 }) {
   const field =
-    "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-500";
-  const label = "mb-1 block text-sm font-medium text-slate-300";
+    "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+  const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
     <form action={action} className="space-y-5">
@@ -187,13 +187,13 @@ export function BookingForm({
           className={field}
         />
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-ink-soft">
         Total amount is calculated automatically as daily rate × number of
         days.
       </p>
       <button
         type="submit"
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
       >
         {submitLabel}
       </button>

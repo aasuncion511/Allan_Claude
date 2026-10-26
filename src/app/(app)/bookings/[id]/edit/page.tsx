@@ -35,7 +35,7 @@ export default async function EditBookingPage({
           <form action={remove}>
             <button
               type="submit"
-              className="rounded-lg border border-red-900 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-950"
+              className="rounded-lg border border-danger-text/40 px-4 py-2 text-sm font-medium text-danger-text hover:bg-danger-surface"
             >
               Delete Booking
             </button>
@@ -43,19 +43,19 @@ export default async function EditBookingPage({
         }
       />
       {booking.corporateClient ? (
-        <div className="mb-6 rounded-xl border border-sky-900 bg-sky-950/30 p-4 text-sm text-sky-300">
+        <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-700">
           🏢 Billed to corporate account: <strong>{booking.corporateClient.name}</strong> — not collected through the
           app; invoice separately.
         </div>
       ) : (
         balance > 0 && (
-          <div className="mb-6 rounded-xl border border-amber-900 bg-amber-950/30 p-4 text-sm text-amber-300">
+          <div className="mb-6 rounded-xl border border-warning-text/40 bg-warning-surface p-4 text-sm text-warning-text">
             {formatCurrency(balance)} balance still due on this booking.
           </div>
         )
       )}
 
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="rounded-xl border border-line bg-surface p-6">
         <BookingForm
           action={action}
           vehicles={vehicles}

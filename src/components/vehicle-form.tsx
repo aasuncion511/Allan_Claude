@@ -37,8 +37,8 @@ export function VehicleForm({
   submitLabel: string;
 }) {
   const field =
-    "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-500";
-  const label = "mb-1 block text-sm font-medium text-slate-300";
+    "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+  const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
     <form action={action} className="space-y-5">
@@ -164,12 +164,12 @@ export function VehicleForm({
           </select>
         </div>
         <div className="flex items-center">
-          <label className="mt-5 flex items-center gap-2 text-sm text-slate-300">
+          <label className="mt-5 flex items-center gap-2 text-sm text-ink">
             <input
               name="featured"
               type="checkbox"
               defaultChecked={defaults?.featured ?? false}
-              className="h-4 w-4 rounded border-slate-600 bg-slate-800"
+              className="h-4 w-4 rounded border-line bg-surface"
             />
             Feature on storefront homepage
           </label>
@@ -204,7 +204,7 @@ export function VehicleForm({
       </div>
       <button
         type="submit"
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
       >
         {submitLabel}
       </button>

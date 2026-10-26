@@ -33,36 +33,36 @@ export default async function BillingPage({
       />
 
       {checkout === "success" && (
-        <p className="mb-6 rounded-lg bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+        <p className="mb-6 rounded-lg bg-success-surface px-4 py-3 text-sm text-success-text">
           Subscription updated. It may take a few seconds to reflect below.
         </p>
       )}
       {checkout === "cancelled" && (
-        <p className="mb-6 rounded-lg bg-slate-800 px-4 py-3 text-sm text-slate-300">
+        <p className="mb-6 rounded-lg bg-surface px-4 py-3 text-sm text-ink">
           Checkout was cancelled — no changes were made.
         </p>
       )}
 
-      <div className="mb-8 rounded-xl border border-slate-800 bg-slate-950 p-5">
-        <p className="text-xs uppercase tracking-wide text-slate-500">
+      <div className="mb-8 rounded-xl border border-line bg-surface p-5">
+        <p className="text-xs uppercase tracking-wide text-ink-soft">
           Current Status
         </p>
-        <p className="mt-1 text-xl font-semibold text-slate-50">
+        <p className="mt-1 text-xl font-semibold text-ink">
           {STATUS_LABEL[org.subscriptionStatus] ?? org.subscriptionStatus}
         </p>
         {trialDays !== null && (
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-ink-soft">
             {trialDays} day{trialDays === 1 ? "" : "s"} left in your trial
           </p>
         )}
         {org.currentPeriodEnd && (
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-ink-soft">
             {org.cancelAtPeriodEnd ? "Cancels" : "Renews"} on{" "}
             {formatDate(org.currentPeriodEnd)}
           </p>
         )}
         {user.role !== "OWNER" && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-ink-soft">
             Only the account owner can change plans or payment details.
           </p>
         )}

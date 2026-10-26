@@ -20,9 +20,9 @@ export default async function TeamPage() {
         description={`${members.length} login${members.length === 1 ? "" : "s"} for ${user.organization.name}`}
       />
 
-      <div className="mb-8 overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="mb-8 overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
@@ -31,25 +31,25 @@ export default async function TeamPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {members.map((m) => {
               const remove = removeTeammate.bind(null, m.id);
               return (
-                <tr key={m.id} className="hover:bg-slate-800/50">
-                  <td className="px-4 py-3 text-slate-100">{m.name}</td>
-                  <td className="px-4 py-3 text-slate-300">{m.email}</td>
-                  <td className="px-4 py-3 text-slate-300">
+                <tr key={m.id} className="hover:bg-canvas">
+                  <td className="px-4 py-3 text-ink">{m.name}</td>
+                  <td className="px-4 py-3 text-ink">{m.email}</td>
+                  <td className="px-4 py-3 text-ink">
                     {m.role === "OWNER" ? (
-                      <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400">
+                      <span className="rounded-full bg-success-surface px-2.5 py-1 text-xs font-medium text-brand">
                         Owner — full access
                       </span>
                     ) : (
-                      <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-400">
+                      <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700">
                         Staff
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {formatDate(m.createdAt)}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -57,14 +57,14 @@ export default async function TeamPage() {
                       <div className="flex items-center justify-end gap-4">
                         <Link
                           href={`/settings/team/${m.id}/edit`}
-                          className="text-xs font-medium text-emerald-400 hover:underline"
+                          className="text-xs font-medium text-brand hover:underline"
                         >
                           Permissions
                         </Link>
                         <form action={remove}>
                           <button
                             type="submit"
-                            className="text-xs font-medium text-red-400 hover:underline"
+                            className="text-xs font-medium text-danger-text hover:underline"
                           >
                             Remove
                           </button>
@@ -81,15 +81,15 @@ export default async function TeamPage() {
 
       {user.role === "OWNER" ? (
         <>
-          <h2 className="mb-3 text-lg font-semibold text-slate-100">
+          <h2 className="mb-3 text-lg font-semibold text-ink">
             Add a Teammate
           </h2>
-          <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+          <div className="rounded-xl border border-line bg-surface p-6">
             <InviteForm />
           </div>
         </>
       ) : (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-soft">
           Only the account owner can add or remove teammates, or change what
           they can access.
         </p>

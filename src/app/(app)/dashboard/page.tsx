@@ -85,8 +85,8 @@ export default async function DashboardPage({
                 href={`/dashboard?year=${y}`}
                 className={`rounded-lg px-3 py-2 text-sm font-medium ${
                   y === selectedYear
-                    ? "bg-emerald-600 text-white"
-                    : "border border-slate-700 text-slate-300 hover:bg-slate-800"
+                    ? "bg-brand text-white"
+                    : "border border-line text-ink hover:bg-canvas"
                 }`}
               >
                 {y}
@@ -100,7 +100,7 @@ export default async function DashboardPage({
         <StatCard
           label={`${selectedYear} Revenue`}
           value={formatCurrency(yearTotals.revenue)}
-          tone="positive"
+          tone="lead"
         />
         <StatCard
           label={`${selectedYear} Expenses`}
@@ -119,10 +119,10 @@ export default async function DashboardPage({
         {STATUS_LIST.map((status) => (
           <div
             key={status}
-            className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950 p-4"
+            className="flex items-center justify-between rounded-xl border border-line bg-surface p-4"
           >
             <StatusBadge status={status} />
-            <span className="text-lg font-semibold text-slate-100">
+            <span className="text-lg font-semibold text-ink">
               {statusCounts[status] ?? 0}
             </span>
           </div>
@@ -130,18 +130,18 @@ export default async function DashboardPage({
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-amber-900 bg-amber-950/20 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">For Collections</p>
-          <p className="mt-1 text-xl font-semibold text-slate-100">{formatCurrency(collectionsTotal)}</p>
-          <p className="mt-0.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-warning-text/40 bg-warning-surface p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-warning-text">For Collections</p>
+          <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(collectionsTotal)}</p>
+          <p className="mt-0.5 text-xs text-ink-soft">
             {collectionsCount} item{collectionsCount === 1 ? "" : "s"} past pick-up with a balance or charge still
             due — not simply-reserved bookings waiting for pick-up day
           </p>
         </div>
-        <div className="rounded-xl border border-sky-900 bg-sky-950/20 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-400">Corporate — Invoiced</p>
-          <p className="mt-1 text-xl font-semibold text-slate-100">{formatCurrency(corporateOutstanding)}</p>
-          <p className="mt-0.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Corporate — Invoiced</p>
+          <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(corporateOutstanding)}</p>
+          <p className="mt-0.5 text-xs text-ink-soft">
             {corporateBookings.length} booking{corporateBookings.length === 1 ? "" : "s"} billed to accredited
             companies, not collected through the app
           </p>
@@ -149,22 +149,22 @@ export default async function DashboardPage({
       </div>
 
       {(withBalance.length > 0 || pendingCharges.length > 0) && (
-        <div className="mb-8 overflow-hidden rounded-xl border border-amber-900/50 bg-amber-950/10">
-          <div className="border-b border-amber-900/50 px-4 py-3">
-            <p className="text-sm font-semibold text-amber-300">For Collections — balance or charge due now</p>
+        <div className="mb-8 overflow-x-auto rounded-xl border border-warning-text/40 bg-warning-surface">
+          <div className="border-b border-warning-text/40 px-4 py-3">
+            <p className="text-sm font-semibold text-warning-text">For Collections — balance or charge due now</p>
           </div>
-          <table className="w-full text-left text-sm">
-            <tbody className="divide-y divide-amber-900/30">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <tbody className="divide-y divide-warning-text/20">
               {withBalance.map(({ booking, balance }) => (
                 <tr key={booking.id}>
-                  <td className="px-4 py-3 text-slate-200">{booking.customer.name}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
+                  <td className="px-4 py-3 text-ink">{booking.customer.name}</td>
+                  <td className="px-4 py-3 text-xs text-ink-soft">
                     {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">Balance due since {formatDate(booking.startDate)}</td>
-                  <td className="px-4 py-3 text-amber-300">{formatCurrency(balance)}</td>
+                  <td className="px-4 py-3 text-xs text-ink-soft">Balance due since {formatDate(booking.startDate)}</td>
+                  <td className="px-4 py-3 text-warning-text">{formatCurrency(balance)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/bookings/${booking.id}/edit`} className="text-xs font-medium text-emerald-400 hover:underline">
+                    <Link href={`/bookings/${booking.id}/edit`} className="text-xs font-medium text-brand hover:underline">
                       Collect
                     </Link>
                   </td>
@@ -172,14 +172,14 @@ export default async function DashboardPage({
               ))}
               {pendingCharges.map((c) => (
                 <tr key={c.id}>
-                  <td className="px-4 py-3 text-slate-200">{c.booking.customer.name}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">
+                  <td className="px-4 py-3 text-ink">{c.booking.customer.name}</td>
+                  <td className="px-4 py-3 text-xs text-ink-soft">
                     {c.booking.vehicle.year} {c.booking.vehicle.make} {c.booking.vehicle.model}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{c.description}</td>
-                  <td className="px-4 py-3 text-amber-300">{formatCurrency(c.amount)}</td>
+                  <td className="px-4 py-3 text-xs text-ink-soft">{c.description}</td>
+                  <td className="px-4 py-3 text-warning-text">{formatCurrency(c.amount)}</td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/bookings/${c.bookingId}/edit`} className="text-xs font-medium text-emerald-400 hover:underline">
+                    <Link href={`/bookings/${c.bookingId}/edit`} className="text-xs font-medium text-brand hover:underline">
                       Collect
                     </Link>
                   </td>
@@ -190,25 +190,25 @@ export default async function DashboardPage({
         </div>
       )}
 
-      <div className="mb-8 rounded-xl border border-slate-800 bg-slate-950 p-5">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <div className="mb-8 rounded-xl border border-line bg-surface p-5">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Monthly Revenue vs. Expense — {selectedYear}
         </h2>
         {yearRows.length > 0 ? (
           <MonthlyChart data={yearRows} />
         ) : (
-          <p className="py-10 text-center text-sm text-slate-500">
+          <p className="py-10 text-center text-sm text-ink-soft">
             No financial activity recorded for {selectedYear} yet.
           </p>
         )}
       </div>
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-100">
+      <h2 className="mb-3 text-lg font-semibold text-ink">
         Revenue &amp; Expense per Unit — {selectedYear}
       </h2>
-      <div className="mb-8 overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="mb-8 overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Plate No.</th>
@@ -217,26 +217,26 @@ export default async function DashboardPage({
               <th className="px-4 py-3">Net Profit</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {perVehicleThisYear.map((v) => (
-              <tr key={v.vehicleId} className="hover:bg-slate-800/50">
+              <tr key={v.vehicleId} className="hover:bg-canvas">
                 <td className="px-4 py-3">
                   <Link
                     href={`/fleet/${v.vehicleId}`}
-                    className="font-medium text-slate-100 hover:text-emerald-400"
+                    className="font-medium text-ink hover:text-brand-dark"
                   >
                     {v.label}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-300">{v.plateNumber}</td>
-                <td className="px-4 py-3 text-emerald-400">
+                <td className="px-4 py-3 text-ink">{v.plateNumber}</td>
+                <td className="px-4 py-3 text-brand">
                   {formatCurrency(v.yearTotals.revenue)}
                 </td>
-                <td className="px-4 py-3 text-red-400">
+                <td className="px-4 py-3 text-danger-text">
                   {formatCurrency(v.yearTotals.expense)}
                 </td>
                 <td
-                  className={`px-4 py-3 font-medium ${v.yearTotals.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                  className={`px-4 py-3 font-medium ${v.yearTotals.profit >= 0 ? "text-brand" : "text-danger-text"}`}
                 >
                   {formatCurrency(v.yearTotals.profit)}
                 </td>
@@ -246,7 +246,7 @@ export default async function DashboardPage({
               <tr>
                 <td
                   colSpan={5}
-                  className="px-4 py-10 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-ink-soft"
                 >
                   No units yet.
                 </td>
@@ -255,18 +255,18 @@ export default async function DashboardPage({
           </tbody>
           {perVehicleThisYear.length > 0 && (
             <tfoot>
-              <tr className="border-t border-slate-800 bg-slate-950 font-semibold">
-                <td className="px-4 py-3 text-slate-200" colSpan={2}>
+              <tr className="border-t border-line bg-canvas font-semibold">
+                <td className="px-4 py-3 text-ink" colSpan={2}>
                   Grand Total ({selectedYear})
                 </td>
-                <td className="px-4 py-3 text-emerald-400">
+                <td className="px-4 py-3 text-brand">
                   {formatCurrency(yearTotals.revenue)}
                 </td>
-                <td className="px-4 py-3 text-red-400">
+                <td className="px-4 py-3 text-danger-text">
                   {formatCurrency(yearTotals.expense)}
                 </td>
                 <td
-                  className={`px-4 py-3 ${yearTotals.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                  className={`px-4 py-3 ${yearTotals.profit >= 0 ? "text-brand" : "text-danger-text"}`}
                 >
                   {formatCurrency(yearTotals.profit)}
                 </td>
@@ -276,27 +276,27 @@ export default async function DashboardPage({
         </table>
       </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-5">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+      <div className="rounded-xl border border-line bg-surface p-5">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           All-Time Grand Total (Every Unit, Every Month)
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-xs text-slate-500">Revenue</p>
-            <p className="text-xl font-semibold text-emerald-400">
+            <p className="text-xs text-ink-soft">Revenue</p>
+            <p className="text-xl font-semibold text-brand">
               {formatCurrency(allTimeTotals.revenue)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Expenses</p>
-            <p className="text-xl font-semibold text-red-400">
+            <p className="text-xs text-ink-soft">Expenses</p>
+            <p className="text-xl font-semibold text-danger-text">
               {formatCurrency(allTimeTotals.expense)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Net Profit</p>
+            <p className="text-xs text-ink-soft">Net Profit</p>
             <p
-              className={`text-xl font-semibold ${allTimeTotals.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
+              className={`text-xl font-semibold ${allTimeTotals.profit >= 0 ? "text-brand" : "text-danger-text"}`}
             >
               {formatCurrency(allTimeTotals.profit)}
             </p>

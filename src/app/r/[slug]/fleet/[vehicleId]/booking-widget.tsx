@@ -114,14 +114,14 @@ export function BookingWidget({
   );
 
   const field =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500";
-  const label = "mb-1 block text-sm font-medium text-slate-700";
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+  const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
-    <div id="book" className="rounded-xl border border-slate-200 bg-white p-6">
+    <div id="book" className="rounded-xl border border-line bg-white p-6">
       {step === "dates" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-900">Pick your dates</h3>
+          <h3 className="text-lg font-semibold text-ink">Pick your dates</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={label}>Pick-up Date</label>
@@ -151,12 +151,12 @@ export function BookingWidget({
               {nights} night{nights === 1 ? "" : "s"} · {formatCurrency(subtotal)} total
             </p>
           )}
-          {dateError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{dateError}</p>}
+          {dateError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{dateError}</p>}
           <button
             type="button"
             onClick={handleContinueFromDates}
             disabled={checking}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-base font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="w-full rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
           >
             {checking ? "Checking availability…" : "Book This Car"}
           </button>
@@ -165,8 +165,8 @@ export function BookingWidget({
 
       {step === "contact" && (
         <form action={contactFormAction} className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-900">Almost there — who&apos;s booking?</h3>
-          <p className="text-sm text-slate-500">
+          <h3 className="text-lg font-semibold text-ink">Almost there — who&apos;s booking?</h3>
+          <p className="text-sm text-ink-soft">
             Just your details, no separate account to set up. We&apos;ll use this to confirm your reservation.
           </p>
           <div>
@@ -188,7 +188,7 @@ export function BookingWidget({
             <input name="address" required className={field} />
           </div>
           {contactState?.error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{contactState.error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{contactState.error}</p>
           )}
           <div className="flex gap-3">
             <button
@@ -201,7 +201,7 @@ export function BookingWidget({
             <button
               type="submit"
               disabled={contactPending}
-              className="flex-1 rounded-lg bg-emerald-600 px-4 py-3 text-base font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
             >
               {contactPending ? "Saving…" : "Continue"}
             </button>
@@ -212,7 +212,7 @@ export function BookingWidget({
       {step === "choose" && (
         <div className="space-y-5">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Reservation Summary</h3>
+            <h3 className="text-lg font-semibold text-ink">Reservation Summary</h3>
             <p className="mt-1 text-sm text-slate-600">
               {startDate} → {endDate} · {nights} night{nights === 1 ? "" : "s"}
             </p>
@@ -232,8 +232,8 @@ export function BookingWidget({
             </span>
           </label>
 
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <p className="font-semibold text-slate-900">Pay {formatCurrency(reservationFeeAmount)} — Confirm Instantly</p>
+          <div className="rounded-lg border border-emerald-200 bg-success-surface p-4">
+            <p className="font-semibold text-ink">Pay {formatCurrency(reservationFeeAmount)} — Confirm Instantly</p>
             <p className="mt-1 text-xs text-slate-600">Your booking is locked in immediately, no waiting.</p>
             <form action={reservationFormAction} className="mt-3">
               <input type="hidden" name="startDate" value={startDate} />
@@ -241,18 +241,18 @@ export function BookingWidget({
               <button
                 type="submit"
                 disabled={!agreed || reservationPending}
-                className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                className="w-full rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
               >
                 {reservationPending ? "Redirecting to payment…" : `Pay ${formatCurrency(reservationFeeAmount)} & Reserve`}
               </button>
             </form>
             {reservationState?.error && (
-              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{reservationState.error}</p>
+              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{reservationState.error}</p>
             )}
           </div>
 
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="font-semibold text-slate-900">Pay {formatCurrency(holdFeeAmount)} — Hold for 2 Hours</p>
+          <div className="rounded-lg border border-line p-4">
+            <p className="font-semibold text-ink">Pay {formatCurrency(holdFeeAmount)} — Hold for 2 Hours</p>
             <p className="mt-1 text-xs text-slate-600">
               Not ready to commit? Hold these dates for 2 hours. Non-refundable, but credited toward your reservation
               fee if you confirm in time.
@@ -263,18 +263,18 @@ export function BookingWidget({
               <button
                 type="submit"
                 disabled={!agreed || holdPending}
-                className="w-full rounded-lg border border-slate-900 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+                className="w-full rounded-lg border border-slate-900 px-4 py-3 text-sm font-semibold text-ink hover:bg-slate-50 disabled:opacity-50"
               >
                 {holdPending ? "Redirecting to payment…" : `Pay ${formatCurrency(holdFeeAmount)} & Hold`}
               </button>
             </form>
             {holdState?.error && (
-              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{holdState.error}</p>
+              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{holdState.error}</p>
             )}
           </div>
 
-          <div className="rounded-lg border border-slate-200 p-4">
-            <p className="font-semibold text-slate-900">Request a Callback</p>
+          <div className="rounded-lg border border-line p-4">
+            <p className="font-semibold text-ink">Request a Callback</p>
             <p className="mt-1 text-xs text-slate-600">
               Prefer to pay cash or bank transfer, or just want to ask something first? We&apos;ll reach out — these dates
               aren&apos;t held while we do.
@@ -291,20 +291,20 @@ export function BookingWidget({
               <button
                 type="submit"
                 disabled={!agreed || inquiryPending}
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm font-medium text-ink hover:bg-slate-50 disabled:opacity-50"
               >
                 {inquiryPending ? "Sending…" : "Request a Callback"}
               </button>
             </form>
             {inquiryState?.error && (
-              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{inquiryState.error}</p>
+              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{inquiryState.error}</p>
             )}
-            {contactPhone && <p className="mt-2 text-xs text-slate-500">Or call us directly at {contactPhone}.</p>}
+            {contactPhone && <p className="mt-2 text-xs text-ink-soft">Or call us directly at {contactPhone}.</p>}
           </div>
 
           {corporateClients.length > 0 && (
-            <div className="rounded-lg border border-slate-200 p-4">
-              <p className="font-semibold text-slate-900">Corporate Account</p>
+            <div className="rounded-lg border border-line p-4">
+              <p className="font-semibold text-ink">Corporate Account</p>
               <p className="mt-1 text-xs text-slate-600">
                 Accredited company? Book now with no payment — your company is billed separately.
               </p>
@@ -325,13 +325,13 @@ export function BookingWidget({
                 <button
                   type="submit"
                   disabled={!agreed || corporatePending}
-                  className="w-full rounded-lg border border-slate-900 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+                  className="w-full rounded-lg border border-slate-900 px-4 py-3 text-sm font-semibold text-ink hover:bg-slate-50 disabled:opacity-50"
                 >
                   {corporatePending ? "Confirming…" : "Book — Confirmed, No Payment"}
                 </button>
               </form>
               {corporateState?.error && (
-                <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{corporateState.error}</p>
+                <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{corporateState.error}</p>
               )}
             </div>
           )}
@@ -339,7 +339,7 @@ export function BookingWidget({
           <button
             type="button"
             onClick={() => setStep(initialCustomer || contact ? "dates" : "contact")}
-            className="text-xs text-slate-500 hover:text-slate-700"
+            className="text-xs text-ink-soft hover:text-ink"
           >
             ← Change dates or details
           </button>
@@ -349,7 +349,7 @@ export function BookingWidget({
       {step === "requested" && (
         <div className="py-6 text-center">
           <div className="mb-3 text-4xl">📞</div>
-          <h3 className="text-lg font-semibold text-slate-900">We&apos;ll be in touch!</h3>
+          <h3 className="text-lg font-semibold text-ink">We&apos;ll be in touch!</h3>
           <p className="mt-2 text-sm text-slate-600">
             We&apos;ve received your request for {startDate} → {endDate}. Our team will call or text you shortly to
             confirm. These dates aren&apos;t held yet — if you&apos;d rather lock them in now, you can still pay online above.

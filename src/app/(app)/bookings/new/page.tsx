@@ -22,9 +22,9 @@ export default async function NewBookingPage({
         title="New Booking"
         description="Schedule a unit for a customer"
       />
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="rounded-xl border border-line bg-surface p-6">
         {vehicles.length === 0 || customers.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-soft">
             You need at least one unit and one customer before creating a
             booking.
           </p>

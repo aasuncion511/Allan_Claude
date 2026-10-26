@@ -16,8 +16,8 @@ export default async function NewFuelLogPage({
 
   const action = createFuelLog.bind(null, vehicle.id);
   const field =
-    "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-500";
-  const label = "mb-1 block text-sm font-medium text-slate-300";
+    "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+  const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
     <div className="max-w-xl">
@@ -25,7 +25,7 @@ export default async function NewFuelLogPage({
         title="Log Fuel"
         description={`${vehicle.plateNumber} — ${vehicle.make} ${vehicle.model}`}
       />
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="rounded-xl border border-line bg-surface p-6">
         <form action={action} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -68,12 +68,12 @@ export default async function NewFuelLogPage({
               />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-slate-300">
+          <label className="flex items-center gap-2 text-sm text-ink">
             <input
               name="fullTank"
               type="checkbox"
               defaultChecked
-              className="h-4 w-4 rounded border-slate-700 bg-slate-800"
+              className="h-4 w-4 rounded border-line bg-surface"
             />
             Full tank (needed for accurate consumption calculation)
           </label>
@@ -83,7 +83,7 @@ export default async function NewFuelLogPage({
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             Log Fuel
           </button>

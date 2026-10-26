@@ -27,7 +27,7 @@ export default async function BookingsPage() {
         actions={
           <Link
             href="/bookings/new"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             + New Booking
           </Link>
@@ -35,14 +35,14 @@ export default async function BookingsPage() {
       />
 
       {inquiries.length > 0 && (
-        <div className="mb-6 overflow-hidden rounded-xl border border-amber-800/50 bg-amber-950/20">
-          <div className="border-b border-amber-800/50 px-4 py-3">
-            <p className="text-sm font-semibold text-amber-300">
+        <div className="mb-6 overflow-x-auto rounded-xl border border-warning-text/40 bg-warning-surface">
+          <div className="border-b border-warning-text/40 px-4 py-3">
+            <p className="text-sm font-semibold text-warning-text">
               {inquiries.length} callback request{inquiries.length === 1 ? "" : "s"} — no payment, follow up to close
             </p>
           </div>
-          <table className="w-full text-left text-sm">
-            <tbody className="divide-y divide-amber-900/50">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <tbody className="divide-y divide-warning-text/30">
               {inquiries.map((inq) => {
                 const markContacted = updateInquiryStatus.bind(null, inq.id, "CONTACTED");
                 const markConverted = updateInquiryStatus.bind(null, inq.id, "CONVERTED");
@@ -50,18 +50,18 @@ export default async function BookingsPage() {
                 return (
                   <tr key={inq.id}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-100">{inq.customer.name}</div>
-                      <div className="text-xs text-slate-400">
+                      <div className="font-medium text-ink">{inq.customer.name}</div>
+                      <div className="text-xs text-ink-soft">
                         {inq.customer.phone} · {inq.customer.email}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-ink">
                       {inq.vehicle.year} {inq.vehicle.make} {inq.vehicle.model}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-ink">
                       {formatDate(inq.startDate)} – {formatDate(inq.endDate)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{inq.message}</td>
+                    <td className="px-4 py-3 text-xs text-ink-soft">{inq.message}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={inq.status} />
                     </td>
@@ -69,14 +69,14 @@ export default async function BookingsPage() {
                       <div className="flex justify-end gap-2">
                         {inq.status === "NEW" && (
                           <form action={markContacted}>
-                            <button className="font-medium text-sky-400 hover:underline">Mark Contacted</button>
+                            <button className="font-medium text-sky-700 hover:underline">Mark Contacted</button>
                           </form>
                         )}
                         <form action={markConverted}>
-                          <button className="font-medium text-emerald-400 hover:underline">Converted</button>
+                          <button className="font-medium text-brand hover:underline">Converted</button>
                         </form>
                         <form action={markClosed}>
-                          <button className="font-medium text-slate-500 hover:underline">Dismiss</button>
+                          <button className="font-medium text-ink-soft hover:underline">Dismiss</button>
                         </form>
                       </div>
                     </td>
@@ -88,9 +88,9 @@ export default async function BookingsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Customer</th>
@@ -101,39 +101,39 @@ export default async function BookingsPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {bookings.map((b) => (
-              <tr key={b.id} className="hover:bg-slate-800/50">
+              <tr key={b.id} className="hover:bg-canvas">
                 <td className="px-4 py-3">
                   <Link
                     href={`/fleet/${b.vehicle.id}`}
-                    className="font-medium text-slate-100 hover:text-emerald-400"
+                    className="font-medium text-ink hover:text-brand-dark"
                   >
                     {b.vehicle.plateNumber}
                   </Link>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-ink-soft">
                     {b.vehicle.make} {b.vehicle.model}
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/customers/${b.customer.id}`}
-                    className="text-slate-200 hover:text-emerald-400"
+                    className="text-ink hover:text-brand-dark"
                   >
                     {b.customer.name}
                   </Link>
                   {b.corporateClient && (
-                    <div className="text-xs text-sky-400">🏢 {b.corporateClient.name}</div>
+                    <div className="text-xs text-sky-700">🏢 {b.corporateClient.name}</div>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {formatDate(b.startDate)} – {formatDate(b.endDate)}
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {formatCurrency(b.totalAmount)}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={b.amountPaid < b.totalAmount && !b.corporateClient ? "text-amber-400" : "text-slate-300"}>
+                  <span className={b.amountPaid < b.totalAmount && !b.corporateClient ? "text-warning-text" : "text-ink"}>
                     {formatCurrency(b.amountPaid)}
                   </span>
                 </td>
@@ -143,7 +143,7 @@ export default async function BookingsPage() {
                 <td className="px-4 py-3 text-right">
                   <Link
                     href={`/bookings/${b.id}/edit`}
-                    className="text-xs font-medium text-emerald-400 hover:underline"
+                    className="text-xs font-medium text-brand hover:underline"
                   >
                     Edit
                   </Link>
@@ -154,10 +154,10 @@ export default async function BookingsPage() {
               <tr>
                 <td
                   colSpan={7}
-                  className="px-4 py-10 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-ink-soft"
                 >
                   No bookings yet.{" "}
-                  <Link href="/bookings/new" className="text-emerald-400">
+                  <Link href="/bookings/new" className="text-brand">
                     Create the first booking
                   </Link>
                   .

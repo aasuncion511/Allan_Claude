@@ -19,9 +19,9 @@ export default async function NewExpensePage({
   return (
     <div className="max-w-2xl">
       <PageHeader title="Add Expense" description="Log an operating cost for a unit" />
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="rounded-xl border border-line bg-surface p-6">
         {vehicles.length === 0 ? (
-          <p className="text-sm text-slate-400">Add a unit first.</p>
+          <p className="text-sm text-ink-soft">Add a unit first.</p>
         ) : (
           <ExpenseForm
             action={createExpense}

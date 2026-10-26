@@ -15,8 +15,8 @@ export function InviteForm() {
   }, [state]);
 
   const field =
-    "w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-500";
-  const label = "mb-1 block text-sm font-medium text-slate-300";
+    "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+  const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
     <form ref={formRef} action={formAction} className="space-y-5">
@@ -42,14 +42,14 @@ export function InviteForm() {
       </div>
       <PermissionCheckboxes defaults={DEFAULT_STAFF_PERMISSIONS} />
       {state?.error && (
-        <p className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-lg bg-danger-surface px-3 py-2 text-sm text-danger-text">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
       >
         {pending ? "Adding…" : "Add Teammate"}
       </button>

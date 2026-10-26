@@ -22,9 +22,9 @@ export default async function NewMaintenancePage({
         title="Log Maintenance"
         description="Record a service event and its next due date"
       />
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="rounded-xl border border-line bg-surface p-6">
         {vehicles.length === 0 ? (
-          <p className="text-sm text-slate-400">Add a unit first.</p>
+          <p className="text-sm text-ink-soft">Add a unit first.</p>
         ) : (
           <MaintenanceForm
             action={createMaintenanceLog}

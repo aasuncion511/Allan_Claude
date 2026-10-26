@@ -37,66 +37,66 @@ export default async function CustomerDetailPage({
         actions={
           <Link
             href={`/customers/${customer.id}/edit`}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+            className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas"
           >
             Edit
           </Link>
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 rounded-xl border border-slate-800 bg-slate-950 p-5 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 rounded-xl border border-line bg-surface p-5 sm:grid-cols-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-ink-soft">
             Email
           </p>
-          <p className="text-sm text-slate-200">{customer.email ?? "—"}</p>
+          <p className="text-sm text-ink">{customer.email ?? "—"}</p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-ink-soft">
             Driver&rsquo;s License
           </p>
-          <p className="text-sm text-slate-200">
+          <p className="text-sm text-ink">
             {customer.driverLicense ?? "—"}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-ink-soft">
             Total Bookings
           </p>
-          <p className="text-sm text-slate-200">{customer.bookings.length}</p>
+          <p className="text-sm text-ink">{customer.bookings.length}</p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-ink-soft">
             Total Paid
           </p>
-          <p className="text-sm font-semibold text-emerald-400">
+          <p className="text-sm font-semibold text-brand">
             {formatCurrency(totalSpent)}
           </p>
         </div>
         {customer.address && (
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
+            <p className="text-xs uppercase tracking-wide text-ink-soft">
               Address
             </p>
-            <p className="text-sm text-slate-200">{customer.address}</p>
+            <p className="text-sm text-ink">{customer.address}</p>
           </div>
         )}
         {customer.notes && (
           <div className="col-span-2 sm:col-span-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
+            <p className="text-xs uppercase tracking-wide text-ink-soft">
               Notes
             </p>
-            <p className="text-sm text-slate-200">{customer.notes}</p>
+            <p className="text-sm text-ink">{customer.notes}</p>
           </div>
         )}
       </div>
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-100">
+      <h2 className="mb-3 text-lg font-semibold text-ink">
         Booking History
       </h2>
-      <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Dates</th>
@@ -104,21 +104,21 @@ export default async function CustomerDetailPage({
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {customer.bookings.map((b) => (
-              <tr key={b.id} className="hover:bg-slate-800/50">
+              <tr key={b.id} className="hover:bg-canvas">
                 <td className="px-4 py-3">
                   <Link
                     href={`/fleet/${b.vehicle.id}`}
-                    className="text-slate-100 hover:text-emerald-400"
+                    className="text-ink hover:text-brand-dark"
                   >
                     {b.vehicle.year} {b.vehicle.make} {b.vehicle.model}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {formatDate(b.startDate)} – {formatDate(b.endDate)}
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {formatCurrency(b.totalAmount)}
                 </td>
                 <td className="px-4 py-3">
@@ -130,7 +130,7 @@ export default async function CustomerDetailPage({
               <tr>
                 <td
                   colSpan={4}
-                  className="px-4 py-10 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-ink-soft"
                 >
                   No bookings yet.
                 </td>

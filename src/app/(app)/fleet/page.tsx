@@ -25,7 +25,7 @@ export default async function FleetPage() {
         actions={
           <Link
             href="/fleet/new"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             + Add Unit
           </Link>
@@ -37,10 +37,10 @@ export default async function FleetPage() {
           (status) => (
             <div
               key={status}
-              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
+              className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2"
             >
               <StatusBadge status={status} />
-              <span className="text-sm font-semibold text-slate-200">
+              <span className="text-sm font-semibold text-ink">
                 {counts[status] ?? 0}
               </span>
             </div>
@@ -48,9 +48,9 @@ export default async function FleetPage() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Plate No.</th>
@@ -59,27 +59,27 @@ export default async function FleetPage() {
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {vehicles.map((v) => (
-              <tr key={v.id} className="hover:bg-slate-800/50">
+              <tr key={v.id} className="hover:bg-canvas">
                 <td className="px-4 py-3">
                   <Link
                     href={`/fleet/${v.id}`}
-                    className="font-medium text-slate-100 hover:text-emerald-400"
+                    className="font-medium text-ink hover:text-brand-dark"
                   >
                     {v.year} {v.make} {v.model}
                   </Link>
                   {v.color && (
-                    <span className="ml-2 text-xs text-slate-500">
+                    <span className="ml-2 text-xs text-ink-soft">
                       {v.color}
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-300">{v.plateNumber}</td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">{v.plateNumber}</td>
+                <td className="px-4 py-3 text-ink">
                   {formatCurrency(v.dailyRate)}/day
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {v.odometer.toLocaleString()} km
                 </td>
                 <td className="px-4 py-3">
@@ -91,10 +91,10 @@ export default async function FleetPage() {
               <tr>
                 <td
                   colSpan={5}
-                  className="px-4 py-10 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-ink-soft"
                 >
                   No units yet.{" "}
-                  <Link href="/fleet/new" className="text-emerald-400">
+                  <Link href="/fleet/new" className="text-brand">
                     Add your first unit
                   </Link>
                   .

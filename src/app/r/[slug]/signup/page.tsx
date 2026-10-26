@@ -16,14 +16,14 @@ export default async function CustomerSignupPage({
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
-      <h1 className="text-2xl font-bold text-slate-900">
+      <h1 className="text-2xl font-bold text-ink">
         Create your account
       </h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-ink-soft">
         Sign up to book a car with {org.name} — we&rsquo;ll use these details
         to confirm your reservation.
       </p>
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-line bg-white p-6">
         <CustomerSignupForm slug={slug} redirectTo={redirectTo} />
       </div>
     </div>

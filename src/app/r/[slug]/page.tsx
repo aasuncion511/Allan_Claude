@@ -44,7 +44,7 @@ export default async function StorefrontHome({
       <section className="bg-gradient-to-b from-emerald-50 to-white">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-6 py-16 sm:grid-cols-2 sm:py-24">
           <div>
-            <h1 className="text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl">
+            <h1 className="text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
               {org.tagline || `Car Rental with ${org.name}`}
             </h1>
             <p className="mt-4 max-w-md text-lg text-slate-600">
@@ -54,14 +54,14 @@ export default async function StorefrontHome({
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href={`/r/${org.slug}/fleet`}
-                className="rounded-lg bg-emerald-600 px-6 py-3 text-base font-semibold text-white hover:bg-emerald-500"
+                className="rounded-lg bg-brand px-6 py-3 text-base font-semibold text-white hover:bg-brand-dark"
               >
                 Book Your Car Today
               </Link>
               {org.contactPhone && (
                 <a
                   href={`tel:${org.contactPhone}`}
-                  className="rounded-lg border border-slate-300 px-6 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-300 px-6 py-3 text-base font-semibold text-ink hover:bg-slate-50"
                 >
                   Call {org.contactPhone}
                 </a>
@@ -77,7 +77,7 @@ export default async function StorefrontHome({
       {/* Featured fleet */}
       {featured.length > 0 && (
         <section className="mx-auto max-w-6xl px-6 py-16">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-bold text-ink">
             Choose the Perfect Car for Your Journey
           </h2>
           <p className="mt-2 max-w-2xl text-slate-600">
@@ -92,7 +92,7 @@ export default async function StorefrontHome({
           <div className="mt-8">
             <Link
               href={`/r/${org.slug}/fleet`}
-              className="font-semibold text-emerald-700 hover:underline"
+              className="font-semibold text-brand hover:underline"
             >
               See more cars →
             </Link>
@@ -103,16 +103,16 @@ export default async function StorefrontHome({
       {/* How it works */}
       <section className="bg-slate-50">
         <div className="mx-auto max-w-6xl px-6 py-16">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-bold text-ink">
             How to Book Your Car in 4 Easy Steps
           </h2>
           <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <div key={step.title}>
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand font-bold text-white">
                   {i + 1}
                 </div>
-                <p className="font-semibold text-slate-900">{step.title}</p>
+                <p className="font-semibold text-ink">{step.title}</p>
                 <p className="mt-1 text-sm text-slate-600">{step.body}</p>
               </div>
             ))}
@@ -128,17 +128,17 @@ export default async function StorefrontHome({
       {/* Testimonials */}
       {testimonials.length > 0 && (
         <section className="mx-auto max-w-6xl px-6 py-16">
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-bold text-ink">
             What Our Happy Clients Say
           </h2>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {testimonials.map((t) => (
               <blockquote
                 key={t.id}
-                className="rounded-xl border border-slate-200 bg-white p-6"
+                className="rounded-xl border border-line bg-white p-6"
               >
-                <p className="text-slate-700">&ldquo;{t.quote}&rdquo;</p>
-                <footer className="mt-4 text-sm font-semibold text-slate-900">
+                <p className="text-ink">&ldquo;{t.quote}&rdquo;</p>
+                <footer className="mt-4 text-sm font-semibold text-ink">
                   {t.authorName}
                 </footer>
               </blockquote>
@@ -151,13 +151,13 @@ export default async function StorefrontHome({
       {faqs.length > 0 && (
         <section className="bg-slate-50">
           <div className="mx-auto max-w-3xl px-6 py-16">
-            <h2 className="text-2xl font-bold text-slate-900">
+            <h2 className="text-2xl font-bold text-ink">
               Frequently Asked Questions
             </h2>
             <div className="mt-6 space-y-4">
               {faqs.map((f) => (
-                <div key={f.id} className="rounded-xl border border-slate-200 bg-white p-5">
-                  <p className="font-semibold text-slate-900">{f.question}</p>
+                <div key={f.id} className="rounded-xl border border-line bg-white p-5">
+                  <p className="font-semibold text-ink">{f.question}</p>
                   <p className="mt-1 text-sm text-slate-600">{f.answer}</p>
                 </div>
               ))}
@@ -169,7 +169,7 @@ export default async function StorefrontHome({
       <section className="mx-auto max-w-6xl px-6 py-16 text-center">
         <Link
           href={`/r/${org.slug}/fleet`}
-          className="inline-block rounded-lg bg-emerald-600 px-8 py-3 text-base font-semibold text-white hover:bg-emerald-500"
+          className="inline-block rounded-lg bg-brand px-8 py-3 text-base font-semibold text-white hover:bg-brand-dark"
         >
           Book Now
         </Link>

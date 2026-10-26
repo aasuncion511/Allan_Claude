@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f7f3;
+  --foreground: #172e25;
 }
 
 @theme inline {
@@ -10,13 +10,26 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* BIB002 visual system — see design-tokens.json in the UI design kit. */
+  --color-brand: #004c25;
+  --color-brand-dark: #053a25;
+  --color-brand-deep: #092e22;
+  --color-brand-accent: #18b957;
+  --color-brand-brown: #754000;
+  --color-canvas: #f7f7f3;
+  --color-surface: #ffffff;
+  --color-ink: #172e25;
+  --color-ink-soft: #68766e;
+  --color-line: #e1e6df;
+  --color-success-surface: #edf4ed;
+  --color-success-text: #21613a;
+  --color-warning-surface: #fff2df;
+  --color-warning-text: #8b4d0e;
+  --color-danger-surface: #fcece9;
+  --color-danger-text: #a33732;
+  --color-nav-active: #e2f3bb;
+  --color-focus: #2879c4;
 }
 
 body {

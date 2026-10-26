@@ -36,7 +36,7 @@ export default async function VehicleDetailPage({
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
       <div className="grid grid-cols-1 gap-10 sm:grid-cols-2">
-        <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
+        <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-canvas">
           {vehicle.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -51,17 +51,17 @@ export default async function VehicleDetailPage({
           )}
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-bold text-ink">
             {vehicle.year} {vehicle.make} {vehicle.model}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-ink-soft">
             {[vehicle.category, vehicle.seats ? `${vehicle.seats} Seater` : null, vehicle.transmission, vehicle.color]
               .filter(Boolean)
               .join(" · ")}
           </p>
-          <p className="mt-4 text-3xl font-bold text-emerald-700">
+          <p className="mt-4 text-3xl font-bold text-brand">
             {formatCurrency(vehicle.dailyRate)}
-            <span className="text-base font-normal text-slate-500">/day</span>
+            <span className="text-base font-normal text-ink-soft">/day</span>
           </p>
           {vehicle.description && (
             <p className="mt-4 text-slate-600">{vehicle.description}</p>
@@ -70,7 +70,7 @@ export default async function VehicleDetailPage({
             {isBookable ? (
               <a
                 href="#book"
-                className="inline-block rounded-lg bg-emerald-600 px-6 py-3 text-base font-semibold text-white hover:bg-emerald-500"
+                className="inline-block rounded-lg bg-brand px-6 py-3 text-base font-semibold text-white hover:bg-brand-dark"
               >
                 Book This Car
               </a>
@@ -79,7 +79,7 @@ export default async function VehicleDetailPage({
             )}
           </div>
           {org.reservationFeeAmount > 0 && (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-ink-soft">
               A {formatCurrency(org.reservationFeeAmount)} reservation fee
               confirms your booking instantly online.
             </p>
@@ -90,7 +90,7 @@ export default async function VehicleDetailPage({
       {isBookable && (
         <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-[1.1fr_1fr]">
           <div>
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">Availability</h2>
+            <h2 className="mb-3 text-lg font-semibold text-ink">Availability</h2>
             <AvailabilityCalendar blockedRanges={blockedRanges} />
           </div>
           <BookingWidget
@@ -108,8 +108,8 @@ export default async function VehicleDetailPage({
       )}
 
       {org.requirementsText && (
-        <div className="mt-12 rounded-xl border border-slate-200 bg-slate-50 p-6">
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">Rental Requirements</h2>
+        <div className="mt-12 rounded-xl border border-line bg-slate-50 p-6">
+          <h2 className="mb-2 text-sm font-semibold text-ink">Rental Requirements</h2>
           <p className="whitespace-pre-line text-sm text-slate-600">{org.requirementsText}</p>
         </div>
       )}

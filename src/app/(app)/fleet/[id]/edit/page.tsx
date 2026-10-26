@@ -23,7 +23,7 @@ export default async function EditVehiclePage({
         title={`Edit ${vehicle.make} ${vehicle.model}`}
         description={vehicle.plateNumber}
       />
-      <div className="rounded-xl border border-slate-800 bg-slate-950 p-6">
+      <div className="rounded-xl border border-line bg-surface p-6">
         <VehicleForm action={action} defaults={vehicle} submitLabel="Save Changes" />
       </div>
     </div>

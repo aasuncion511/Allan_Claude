@@ -13,11 +13,11 @@ export function ConvertHoldButton({ slug, bookingId, balance }: { slug: string; 
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+        className="rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
       >
         {pending ? "Redirecting to payment…" : `Pay remaining ${formatCurrency(balance)} to confirm`}
       </button>
-      {state?.error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+      {state?.error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{state.error}</p>}
     </form>
   );
 }

@@ -26,19 +26,19 @@ export default async function MaintenancePage() {
         actions={
           <Link
             href="/maintenance/new"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             + Log Maintenance
           </Link>
         }
       />
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-100">
+      <h2 className="mb-3 text-lg font-semibold text-ink">
         Upcoming / Overdue
       </h2>
-      <div className="mb-8 overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="mb-8 overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Last Service</th>
@@ -46,27 +46,27 @@ export default async function MaintenancePage() {
               <th className="px-4 py-3">Next Due Odometer</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {upcoming.map((l) => {
               const overdue = l.nextDueDate && l.nextDueDate < now;
               return (
-                <tr key={l.id} className="hover:bg-slate-800/50">
+                <tr key={l.id} className="hover:bg-canvas">
                   <td className="px-4 py-3">
                     <Link
                       href={`/fleet/${l.vehicle.id}`}
-                      className="text-slate-100 hover:text-emerald-400"
+                      className="text-ink hover:text-brand-dark"
                     >
                       {l.vehicle.plateNumber}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{l.type}</td>
+                  <td className="px-4 py-3 text-ink">{l.type}</td>
                   <td
-                    className={`px-4 py-3 font-medium ${overdue ? "text-red-400" : "text-amber-400"}`}
+                    className={`px-4 py-3 font-medium ${overdue ? "text-danger-text" : "text-warning-text"}`}
                   >
                     {l.nextDueDate ? formatDate(l.nextDueDate) : "—"}
                     {overdue && " (overdue)"}
                   </td>
-                  <td className="px-4 py-3 text-slate-300">
+                  <td className="px-4 py-3 text-ink">
                     {l.nextDueOdometer
                       ? `${l.nextDueOdometer.toLocaleString()} km`
                       : "—"}
@@ -78,7 +78,7 @@ export default async function MaintenancePage() {
               <tr>
                 <td
                   colSpan={4}
-                  className="px-4 py-6 text-center text-slate-500"
+                  className="px-4 py-6 text-center text-ink-soft"
                 >
                   Nothing due in the next 30 days.
                 </td>
@@ -88,12 +88,12 @@ export default async function MaintenancePage() {
         </table>
       </div>
 
-      <h2 className="mb-3 text-lg font-semibold text-slate-100">
+      <h2 className="mb-3 text-lg font-semibold text-ink">
         Service History
       </h2>
-      <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wide text-slate-500">
+      <div className="overflow-x-auto rounded-xl border border-line">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">
             <tr>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3">Type</th>
@@ -103,28 +103,28 @@ export default async function MaintenancePage() {
               <th className="px-4 py-3">Cost</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody className="divide-y divide-line bg-surface">
             {logs.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-800/50">
+              <tr key={l.id} className="hover:bg-canvas">
                 <td className="px-4 py-3">
                   <Link
                     href={`/fleet/${l.vehicle.id}`}
-                    className="text-slate-100 hover:text-emerald-400"
+                    className="text-ink hover:text-brand-dark"
                   >
                     {l.vehicle.plateNumber}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-300">{l.type}</td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">{l.type}</td>
+                <td className="px-4 py-3 text-ink">
                   {formatDate(l.date)}
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {l.odometer ? `${l.odometer.toLocaleString()} km` : "—"}
                 </td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-ink">
                   {l.vendor ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-red-400">
+                <td className="px-4 py-3 text-danger-text">
                   {formatCurrency(l.cost)}
                 </td>
               </tr>
@@ -133,7 +133,7 @@ export default async function MaintenancePage() {
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-10 text-center text-slate-500"
+                  className="px-4 py-10 text-center text-ink-soft"
                 >
                   No maintenance logged yet.
                 </td>

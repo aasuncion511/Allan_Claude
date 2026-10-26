@@ -15,8 +15,8 @@ export function CustomerLoginForm({
   const [state, formAction, pending] = useActionState(action, undefined);
 
   const field =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500";
-  const label = "mb-1 block text-sm font-medium text-slate-700";
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+  const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
     <form action={formAction} className="space-y-4">
@@ -30,20 +30,20 @@ export function CustomerLoginForm({
         <input name="password" type="password" required className={field} />
       </div>
       {state?.error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{state.error}</p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+        className="w-full rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-ink-soft">
         New here?{" "}
         <Link
           href={`/r/${slug}/signup${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}
-          className="font-medium text-emerald-700 hover:underline"
+          className="font-medium text-brand hover:underline"
         >
           Create an account
         </Link>

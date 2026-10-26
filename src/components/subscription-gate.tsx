@@ -18,18 +18,18 @@ export function SubscriptionGate({
   if (!hasAccess && !isBillingPage) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="max-w-md rounded-xl border border-slate-800 bg-slate-950 p-8 text-center">
+        <div className="max-w-md rounded-xl border border-line bg-surface p-8 text-center">
           <div className="mb-3 text-3xl">⏳</div>
-          <h2 className="text-lg font-semibold text-slate-50">
+          <h2 className="text-lg font-semibold text-ink">
             Your trial has ended
           </h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-ink-soft">
             Subscribe to a plan to keep using your fleet dashboard, bookings,
             and reports.
           </p>
           <Link
             href="/settings/billing"
-            className="mt-5 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
             View plans
           </Link>
@@ -41,7 +41,7 @@ export function SubscriptionGate({
   return (
     <>
       {hasAccess && daysLeftInTrial !== null && daysLeftInTrial <= 3 && !isBillingPage && (
-        <div className="mb-6 flex items-center justify-between rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <div className="mb-6 flex items-center justify-between rounded-lg bg-warning-surface px-4 py-3 text-sm text-warning-text">
           <span>
             {daysLeftInTrial === 0
               ? "Your trial ends today."
