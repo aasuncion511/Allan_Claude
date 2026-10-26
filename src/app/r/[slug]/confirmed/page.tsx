@@ -23,18 +23,19 @@ export default async function BookingConfirmedPage({
       ? await prisma.booking.findFirst({
           where: { customerId: customer.id, vehicleId, organizationId: org.id },
           orderBy: { createdAt: "desc" },
-          include: { vehicle: true },
+          include: { vehicle: true, corporateClient: true },
         })
       : null;
 
   const isActiveHold = booking?.status === "HOLD" && booking.holdExpiresAt && booking.holdExpiresAt > new Date();
+  const isCorporate = Boolean(booking?.corporateClient);
   const balance = booking ? Math.max(0, org.reservationFeeAmount - booking.amountPaid) : 0;
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-6 text-center">
-      <div className="mb-4 text-5xl">{isActiveHold ? "⏳" : "✅"}</div>
+      <div className="mb-4 text-5xl">{isActiveHold ? "⏳" : isCorporate ? "🏢" : "✅"}</div>
       <h1 className="text-2xl font-bold text-slate-900">
-        {isActiveHold ? "Your car is held for 2 hours!" : "Payment received!"}
+        {isActiveHold ? "Your car is held for 2 hours!" : isCorporate ? "Booking confirmed!" : "Payment received!"}
       </h1>
 
       {isActiveHold ? (
@@ -50,6 +51,11 @@ export default async function BookingConfirmedPage({
             <p className="mt-2 text-sm text-emerald-700">Your hold fee already covers the reservation fee — you&apos;re confirmed!</p>
           )}
         </>
+      ) : isCorporate ? (
+        <p className="mt-2 text-slate-600">
+          {booking!.vehicle.year} {booking!.vehicle.make} {booking!.vehicle.model} is reserved for your dates and
+          billed to {booking!.corporateClient!.name}. No payment is needed now.
+        </p>
       ) : (
         <p className="mt-2 text-slate-600">
           We&rsquo;re confirming your reservation with {org.name} now — this usually takes just a few seconds.

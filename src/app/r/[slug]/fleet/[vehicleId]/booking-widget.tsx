@@ -8,8 +8,10 @@ import {
   checkAvailabilityAction,
   createBookingCheckout,
   createCallbackInquiry,
+  createCorporateBooking,
   type BookingCheckoutState,
   type InquiryState,
+  type CorporateBookingState,
 } from "./actions";
 
 type Step = "dates" | "contact" | "choose" | "requested";
@@ -23,6 +25,7 @@ export function BookingWidget({
   contactPhone,
   requirementsText,
   initialCustomer,
+  corporateClients,
 }: {
   slug: string;
   vehicleId: string;
@@ -32,6 +35,7 @@ export function BookingWidget({
   contactPhone: string | null;
   requirementsText: string | null;
   initialCustomer: { name: string; email: string; phone: string; address: string } | null;
+  corporateClients: { id: string; name: string }[];
 }) {
   const [step, setStep] = useState<Step>("dates");
   const today = new Date().toISOString().slice(0, 10);
@@ -102,6 +106,12 @@ export function BookingWidget({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (inquiryState?.success) setStep("requested");
   }, [inquiryState]);
+
+  const corporateAction = createCorporateBooking.bind(null, slug, vehicleId);
+  const [corporateState, corporateFormAction, corporatePending] = useActionState<CorporateBookingState, FormData>(
+    corporateAction,
+    undefined
+  );
 
   const field =
     "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-emerald-500";
@@ -291,6 +301,40 @@ export function BookingWidget({
             )}
             {contactPhone && <p className="mt-2 text-xs text-slate-500">Or call us directly at {contactPhone}.</p>}
           </div>
+
+          {corporateClients.length > 0 && (
+            <div className="rounded-lg border border-slate-200 p-4">
+              <p className="font-semibold text-slate-900">Corporate Account</p>
+              <p className="mt-1 text-xs text-slate-600">
+                Accredited company? Book now with no payment — your company is billed separately.
+              </p>
+              <form action={corporateFormAction} className="mt-3 space-y-2">
+                <input type="hidden" name="startDate" value={startDate} />
+                <input type="hidden" name="endDate" value={endDate} />
+                <select name="corporateClientId" required className={field} defaultValue="">
+                  <option value="" disabled>
+                    Select your company…
+                  </option>
+                  {corporateClients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <input name="accessCode" placeholder="Access code" required className={field} />
+                <button
+                  type="submit"
+                  disabled={!agreed || corporatePending}
+                  className="w-full rounded-lg border border-slate-900 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {corporatePending ? "Confirming…" : "Book — Confirmed, No Payment"}
+                </button>
+              </form>
+              {corporateState?.error && (
+                <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{corporateState.error}</p>
+              )}
+            </div>
+          )}
 
           <button
             type="button"

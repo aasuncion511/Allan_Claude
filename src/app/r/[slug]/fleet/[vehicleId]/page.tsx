@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getPublicOrgBySlug } from "@/lib/public-org";
 import { getBlockedRanges } from "@/lib/availability";
 import { getCurrentCustomer } from "@/lib/customer-auth";
+import { getActiveCorporateClients } from "@/lib/corporate-clients";
 import { formatCurrency } from "@/lib/format";
 import { StatusBadge } from "@/components/badge";
 import { AvailabilityCalendar } from "@/components/availability-calendar";
@@ -24,6 +25,7 @@ export default async function VehicleDetailPage({
 
   const isBookable = vehicle.status !== "MAINTENANCE" && vehicle.status !== "OUT_OF_SERVICE";
   const blockedRanges = await getBlockedRanges(vehicleId);
+  const corporateClients = await getActiveCorporateClients(org.id);
 
   const customer = await getCurrentCustomer();
   const initialCustomer =
@@ -100,6 +102,7 @@ export default async function VehicleDetailPage({
             contactPhone={org.contactPhone}
             requirementsText={org.requirementsText}
             initialCustomer={initialCustomer}
+            corporateClients={corporateClients}
           />
         </div>
       )}

@@ -10,7 +10,7 @@ export default async function BookingsPage() {
   const { organizationId } = await requirePermission("bookings");
   const bookings = await prisma.booking.findMany({
     where: { organizationId },
-    include: { vehicle: true, customer: true },
+    include: { vehicle: true, customer: true, corporateClient: true },
     orderBy: { startDate: "desc" },
   });
   const inquiries = await prisma.bookingInquiry.findMany({
@@ -122,6 +122,9 @@ export default async function BookingsPage() {
                   >
                     {b.customer.name}
                   </Link>
+                  {b.corporateClient && (
+                    <div className="text-xs text-sky-400">🏢 {b.corporateClient.name}</div>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-300">
                   {formatDate(b.startDate)} – {formatDate(b.endDate)}
@@ -129,8 +132,10 @@ export default async function BookingsPage() {
                 <td className="px-4 py-3 text-slate-300">
                   {formatCurrency(b.totalAmount)}
                 </td>
-                <td className="px-4 py-3 text-slate-300">
-                  {formatCurrency(b.amountPaid)}
+                <td className="px-4 py-3">
+                  <span className={b.amountPaid < b.totalAmount && !b.corporateClient ? "text-amber-400" : "text-slate-300"}>
+                    {formatCurrency(b.amountPaid)}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge status={b.status} />

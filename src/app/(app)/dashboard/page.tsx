@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/badge";
 import { MonthlyChart } from "@/components/monthly-chart";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { getFleetSummary, filterByYear, sumRows, distinctYears } from "@/lib/metrics";
 
 const STATUS_LIST = ["AVAILABLE", "BOOKED", "RESERVED", "MAINTENANCE", "OUT_OF_SERVICE"];
@@ -17,10 +17,42 @@ export default async function DashboardPage({
 }) {
   const { year: yearParam } = await searchParams;
   const { organizationId } = await requirePermission("dashboard");
-  const [{ overall, perVehicle }, vehicles] = await Promise.all([
-    getFleetSummary(organizationId),
-    prisma.vehicle.findMany({ where: { organizationId } }),
-  ]);
+  const now = new Date();
+  const [{ overall, perVehicle }, vehicles, collectionsBookings, pendingCharges, corporateBookings] =
+    await Promise.all([
+      getFleetSummary(organizationId),
+      prisma.vehicle.findMany({ where: { organizationId } }),
+      // Balance still owed on a booking that's already past pick-up — not a
+      // freshly reserved booking still waiting for its pick-up date.
+      prisma.booking.findMany({
+        where: {
+          organizationId,
+          corporateClientId: null,
+          status: { notIn: ["CANCELLED", "HOLD"] },
+          startDate: { lte: now },
+        },
+        include: { vehicle: true, customer: true },
+        orderBy: { startDate: "asc" },
+      }),
+      prisma.bookingCharge.findMany({
+        where: { organizationId, status: "PENDING" },
+        include: { booking: { include: { vehicle: true, customer: true } } },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.booking.findMany({
+        where: { organizationId, corporateClientId: { not: null }, status: { not: "CANCELLED" } },
+        include: { vehicle: true, customer: true, corporateClient: true },
+        orderBy: { startDate: "desc" },
+      }),
+    ]);
+
+  const withBalance = collectionsBookings
+    .map((b) => ({ booking: b, balance: b.totalAmount - b.amountPaid }))
+    .filter((b) => b.balance > 0.01);
+  const collectionsTotal =
+    withBalance.reduce((sum, b) => sum + b.balance, 0) + pendingCharges.reduce((sum, c) => sum + c.amount, 0);
+  const collectionsCount = withBalance.length + pendingCharges.length;
+  const corporateOutstanding = corporateBookings.reduce((sum, b) => sum + (b.totalAmount - b.amountPaid), 0);
 
   const years = distinctYears(overall);
   const selectedYear = yearParam ? Number(yearParam) : years[0] ?? new Date().getFullYear();
@@ -96,6 +128,67 @@ export default async function DashboardPage({
           </div>
         ))}
       </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-amber-900 bg-amber-950/20 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">For Collections</p>
+          <p className="mt-1 text-xl font-semibold text-slate-100">{formatCurrency(collectionsTotal)}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {collectionsCount} item{collectionsCount === 1 ? "" : "s"} past pick-up with a balance or charge still
+            due — not simply-reserved bookings waiting for pick-up day
+          </p>
+        </div>
+        <div className="rounded-xl border border-sky-900 bg-sky-950/20 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-400">Corporate — Invoiced</p>
+          <p className="mt-1 text-xl font-semibold text-slate-100">{formatCurrency(corporateOutstanding)}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {corporateBookings.length} booking{corporateBookings.length === 1 ? "" : "s"} billed to accredited
+            companies, not collected through the app
+          </p>
+        </div>
+      </div>
+
+      {(withBalance.length > 0 || pendingCharges.length > 0) && (
+        <div className="mb-8 overflow-hidden rounded-xl border border-amber-900/50 bg-amber-950/10">
+          <div className="border-b border-amber-900/50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-300">For Collections — balance or charge due now</p>
+          </div>
+          <table className="w-full text-left text-sm">
+            <tbody className="divide-y divide-amber-900/30">
+              {withBalance.map(({ booking, balance }) => (
+                <tr key={booking.id}>
+                  <td className="px-4 py-3 text-slate-200">{booking.customer.name}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">
+                    {booking.vehicle.year} {booking.vehicle.make} {booking.vehicle.model}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">Balance due since {formatDate(booking.startDate)}</td>
+                  <td className="px-4 py-3 text-amber-300">{formatCurrency(balance)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={`/bookings/${booking.id}/edit`} className="text-xs font-medium text-emerald-400 hover:underline">
+                      Collect
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {pendingCharges.map((c) => (
+                <tr key={c.id}>
+                  <td className="px-4 py-3 text-slate-200">{c.booking.customer.name}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500">
+                    {c.booking.vehicle.year} {c.booking.vehicle.make} {c.booking.vehicle.model}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">{c.description}</td>
+                  <td className="px-4 py-3 text-amber-300">{formatCurrency(c.amount)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={`/bookings/${c.bookingId}/edit`} className="text-xs font-medium text-emerald-400 hover:underline">
+                      Collect
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="mb-8 rounded-xl border border-slate-800 bg-slate-950 p-5">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">

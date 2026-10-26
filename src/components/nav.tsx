@@ -18,6 +18,12 @@ const SETTINGS_LINKS = [
   { href: "/settings/team", label: "Team", icon: "🧑‍🤝‍🧑" },
   { href: "/settings/billing", label: "Billing", icon: "💳" },
   { href: "/settings/storefront", label: "Storefront", icon: "🌐", permKey: "storefrontSettings" as PermissionKey },
+  {
+    href: "/settings/corporate-clients",
+    label: "Corporate Clients",
+    icon: "🏢",
+    permKey: "storefrontSettings" as PermissionKey,
+  },
 ];
 
 export function Nav({

@@ -39,9 +39,17 @@ export async function POST(
     const session = event.data.attributes.data;
     const checkoutId: string = session?.id;
     const metadata = (session?.attributes?.metadata ?? {}) as Record<string, string>;
-    const kind = metadata.kind === "hold" || metadata.kind === "convert" ? metadata.kind : "reservation";
+    const kind =
+      metadata.kind === "hold" || metadata.kind === "convert" || metadata.kind === "charge"
+        ? metadata.kind
+        : "reservation";
 
     if (!checkoutId) return Response.json({ received: true });
+
+    if (kind === "charge") {
+      await handleCharge(org.id, checkoutId, metadata);
+      return Response.json({ received: true });
+    }
 
     const alreadyHandled = await prisma.booking.findFirst({ where: { paymongoCheckoutId: checkoutId } });
     if (alreadyHandled) return Response.json({ received: true });
@@ -129,6 +137,25 @@ async function handleNewBooking(
       );
     }
   }
+}
+
+async function handleCharge(organizationId: string, checkoutId: string, metadata: Record<string, string>) {
+  const { chargeId } = metadata;
+  if (!chargeId) return;
+
+  const charge = await prisma.bookingCharge.findFirst({ where: { id: chargeId, organizationId } });
+  if (!charge || charge.status !== "PENDING") return;
+
+  await prisma.$transaction([
+    prisma.bookingCharge.update({
+      where: { id: charge.id },
+      data: { status: "PAID", paidVia: "paymongo", paidAt: new Date(), paymongoCheckoutId: checkoutId },
+    }),
+    prisma.booking.update({
+      where: { id: charge.bookingId },
+      data: { amountPaid: { increment: charge.amount } },
+    }),
+  ]);
 }
 
 async function handleConvert(organizationId: string, checkoutId: string, metadata: Record<string, string>) {

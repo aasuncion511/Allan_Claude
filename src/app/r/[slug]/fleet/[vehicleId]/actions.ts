@@ -228,3 +228,79 @@ export async function createCallbackInquiry(
 
   return { success: true };
 }
+
+export type CorporateBookingState = { error?: string } | undefined;
+
+/** Accredited corporate account books with no online payment — gated by a shared access
+ *  code so a public visitor can't just pick a company name off the dropdown for free. */
+export async function createCorporateBooking(
+  slug: string,
+  vehicleId: string,
+  _prevState: CorporateBookingState,
+  formData: FormData
+): Promise<CorporateBookingState> {
+  const range = parseDateRange(formData);
+  if ("error" in range) return range;
+  const { startDate, endDate } = range;
+
+  const ctx = await loadBookableContext(slug, vehicleId);
+  if ("error" in ctx) return ctx;
+  const { customer, org, vehicle } = ctx;
+
+  const corporateClientId = String(formData.get("corporateClientId") ?? "").trim();
+  const accessCode = String(formData.get("accessCode") ?? "").trim();
+  if (!corporateClientId || !accessCode) {
+    return { error: "Please select your company and enter its access code." };
+  }
+
+  const corporateClient = await prisma.corporateClient.findFirst({
+    where: { id: corporateClientId, organizationId: org.id, active: true },
+  });
+  if (!corporateClient || corporateClient.accessCode !== accessCode) {
+    return { error: "Invalid company or access code." };
+  }
+
+  const available = await isVehicleAvailable(vehicleId, startDate, endDate);
+  if (!available) {
+    return { error: "Sorry, this unit is already booked or held for part of those dates. Please choose different dates." };
+  }
+
+  const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000));
+  const totalAmount = vehicle.dailyRate * days;
+  const now = new Date();
+
+  await prisma.booking.create({
+    data: {
+      organizationId: org.id,
+      vehicleId: vehicle.id,
+      customerId: customer.id,
+      corporateClientId: corporateClient.id,
+      startDate,
+      endDate,
+      status: startDate <= now && endDate >= now ? "ACTIVE" : "RESERVED",
+      source: "ONLINE",
+      dailyRate: vehicle.dailyRate,
+      totalAmount,
+      amountPaid: 0,
+      paymentStatus: "INVOICED",
+    },
+  });
+
+  if (startDate <= now && endDate >= now && vehicle.status !== "MAINTENANCE" && vehicle.status !== "OUT_OF_SERVICE") {
+    await prisma.vehicle.update({ where: { id: vehicle.id }, data: { status: "BOOKED" } });
+  }
+
+  if (isGhlConfigured(org)) {
+    await upsertGhlContact(
+      { locationId: org.ghlLocationId!, apiToken: org.ghlApiToken! },
+      {
+        name: customer.name,
+        email: customer.email ?? "",
+        phone: customer.phone,
+        tags: ["corporate-booking", `corp:${corporateClient.name}`],
+      }
+    );
+  }
+
+  redirect(`/r/${slug}/confirmed?vehicleId=${vehicleId}`);
+}

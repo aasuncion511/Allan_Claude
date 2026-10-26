@@ -39,6 +39,15 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  /// Billed to an accredited corporate account rather than collected
+  /// through the app — not a payment failure, just a different rail.
+  INVOICED
+}
+
+enum ChargeStatus {
+  PENDING
+  PAID
+  CANCELLED
 }
 
 enum BookingSource {
@@ -114,6 +123,8 @@ model Organization {
   customers        Customer[]
   bookings         Booking[]
   bookingInquiries BookingInquiry[]
+  bookingCharges   BookingCharge[]
+  corporateClients CorporateClient[]
   expenses         Expense[]
   maintenanceLogs  MaintenanceLog[]
   fuelLogs         FuelLog[]
@@ -211,6 +222,9 @@ model Booking {
   /// Set only while status = HOLD. The unit is blocked on the calendar until
   /// this time; if the hold isn't converted before it passes, it's released.
   holdExpiresAt    DateTime?
+  /// Set only for bookings made against an accredited corporate account —
+  /// no online payment is collected; the company is billed separately.
+  corporateClientId String?
   pickupLocation   String?
   dropoffLocation  String?
   notes            String?
@@ -220,12 +234,63 @@ model Booking {
   organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   vehicle          Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  corporateClient  CorporateClient? @relation(fields: [corporateClientId], references: [id])
+  charges          BookingCharge[]
 
   @@index([organizationId])
   @@index([vehicleId])
   @@index([customerId])
   @@index([startDate, endDate])
   @@index([paymongoCheckoutId])
+  @@index([corporateClientId])
+}
+
+/// A balance-due or incidental charge (late fee, damage, fuel, excess
+/// mileage) collected via its own PayMongo checkout so staff never have to
+/// take cash — each charge is its own payment event on top of the booking.
+model BookingCharge {
+  id                 String       @id @default(cuid())
+  organizationId     String
+  bookingId          String
+  description        String
+  amount             Float
+  status             ChargeStatus @default(PENDING)
+  paymongoCheckoutId String?
+  /// "paymongo" when collected online, "manual" when a staffer recorded an
+  /// offline payment as a fallback (e.g. PayMongo was down).
+  paidVia            String?
+  recordedByUserId   String?
+  createdAt          DateTime     @default(now())
+  paidAt             DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([bookingId])
+  @@index([paymongoCheckoutId])
+}
+
+/// An accredited corporate client whose bookings skip online payment and
+/// get billed separately. Gated by a shared access code so a public visitor
+/// can't just pick a company name off the dropdown and get a free booking.
+model CorporateClient {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  accessCode     String
+  contactName    String?
+  contactEmail   String?
+  contactPhone   String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId, active])
 }
 
 /// A "request a callback" lead from the storefront — no payment, no calendar
