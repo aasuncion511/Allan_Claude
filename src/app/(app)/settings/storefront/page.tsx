@@ -157,7 +157,7 @@ export default async function StorefrontSettingsPage() {
               placeholder="whsk_…"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={label}>Reservation Fee (₱)</label>
               <input
@@ -167,6 +167,20 @@ export default async function StorefrontSettingsPage() {
                 defaultValue={org.reservationFeeAmount}
                 className={field}
               />
+              <p className="mt-1 text-xs text-slate-500">Confirms a booking instantly.</p>
+            </div>
+            <div>
+              <label className={label}>2-Hour Hold Fee (₱)</label>
+              <input
+                name="holdFeeAmount"
+                type="number"
+                step="0.01"
+                defaultValue={org.holdFeeAmount}
+                className={field}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Non-refundable, credited toward the reservation fee if confirmed in time.
+              </p>
             </div>
             <label className="mt-6 flex items-center gap-2 text-sm text-slate-300">
               <input

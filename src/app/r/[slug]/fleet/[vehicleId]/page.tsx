@@ -1,8 +1,12 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPublicOrgBySlug } from "@/lib/public-org";
+import { getBlockedRanges } from "@/lib/availability";
+import { getCurrentCustomer } from "@/lib/customer-auth";
 import { formatCurrency } from "@/lib/format";
 import { StatusBadge } from "@/components/badge";
+import { AvailabilityCalendar } from "@/components/availability-calendar";
+import { BookingWidget } from "./booking-widget";
 
 export default async function VehicleDetailPage({
   params,
@@ -19,6 +23,13 @@ export default async function VehicleDetailPage({
   if (!vehicle) notFound();
 
   const isBookable = vehicle.status !== "MAINTENANCE" && vehicle.status !== "OUT_OF_SERVICE";
+  const blockedRanges = await getBlockedRanges(vehicleId);
+
+  const customer = await getCurrentCustomer();
+  const initialCustomer =
+    customer && customer.organizationId === org.id
+      ? { name: customer.name, email: customer.email ?? "", phone: customer.phone, address: customer.address ?? "" }
+      : null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
@@ -56,10 +67,10 @@ export default async function VehicleDetailPage({
           <div className="mt-6">
             {isBookable ? (
               <a
-                href={`/r/${org.slug}/book/${vehicle.id}`}
+                href="#book"
                 className="inline-block rounded-lg bg-emerald-600 px-6 py-3 text-base font-semibold text-white hover:bg-emerald-500"
               >
-                Reserve This Car
+                Book This Car
               </a>
             ) : (
               <StatusBadge status={vehicle.status} />
@@ -73,6 +84,32 @@ export default async function VehicleDetailPage({
           )}
         </div>
       </div>
+
+      {isBookable && (
+        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">Availability</h2>
+            <AvailabilityCalendar blockedRanges={blockedRanges} />
+          </div>
+          <BookingWidget
+            slug={slug}
+            vehicleId={vehicle.id}
+            dailyRate={vehicle.dailyRate}
+            reservationFeeAmount={org.reservationFeeAmount}
+            holdFeeAmount={org.holdFeeAmount}
+            contactPhone={org.contactPhone}
+            requirementsText={org.requirementsText}
+            initialCustomer={initialCustomer}
+          />
+        </div>
+      )}
+
+      {org.requirementsText && (
+        <div className="mt-12 rounded-xl border border-slate-200 bg-slate-50 p-6">
+          <h2 className="mb-2 text-sm font-semibold text-slate-900">Rental Requirements</h2>
+          <p className="whitespace-pre-line text-sm text-slate-600">{org.requirementsText}</p>
+        </div>
+      )}
     </div>
   );
 }

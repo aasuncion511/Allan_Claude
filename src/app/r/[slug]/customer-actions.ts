@@ -91,3 +91,58 @@ export async function customerLogoutAction(slug: string) {
   await clearCustomerSessionCookie();
   redirect(`/r/${slug}`);
 }
+
+export type SaveContactState = { error?: string; name?: string; email?: string; phone?: string; address?: string } | undefined;
+
+/**
+ * Silently creates or updates the renter's contact record as soon as they
+ * give their details on a booking — no explicit "sign up" step, no password.
+ * The signed session cookie set here is what lets them come back later.
+ */
+export async function saveContactAction(
+  slug: string,
+  _prevState: SaveContactState,
+  formData: FormData
+): Promise<SaveContactState> {
+  const org = await getPublicOrgBySlug(slug);
+  if (!org) return { error: "This rental company could not be found." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
+
+  if (!name || !email || !phone || !address) {
+    return { error: "All fields are required." };
+  }
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    return { error: "Please enter a valid email address." };
+  }
+
+  const existing = await prisma.customer.findUnique({
+    where: { organizationId_email: { organizationId: org.id, email } },
+  });
+
+  const customer = existing
+    ? await prisma.customer.update({
+        where: { id: existing.id },
+        data: { name, phone, address },
+      })
+    : await prisma.customer.create({
+        data: { organizationId: org.id, name, email, phone, address },
+      });
+
+  const ghlCreds = await prisma.organization.findUnique({
+    where: { id: org.id },
+    select: { ghlLocationId: true, ghlApiToken: true },
+  });
+  if (ghlCreds && isGhlConfigured(ghlCreds)) {
+    await upsertGhlContact(
+      { locationId: ghlCreds.ghlLocationId!, apiToken: ghlCreds.ghlApiToken! },
+      { name, email, phone, tags: ["website-lead"] }
+    );
+  }
+
+  await setCustomerSessionCookie(customer.id);
+  return { name: customer.name, email: customer.email ?? "", phone: customer.phone, address: customer.address ?? "" };
+}

@@ -17,6 +17,7 @@ const PUBLIC_ORG_SELECT = {
   tiktokUrl: true,
   requirementsText: true,
   reservationFeeAmount: true,
+  holdFeeAmount: true,
 } as const;
 
 export type PublicOrg = NonNullable<

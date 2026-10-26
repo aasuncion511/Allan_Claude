@@ -47,7 +47,7 @@ export default async function VehicleDetailPage({
       : null;
 
   const upcomingBookings = vehicle.bookings.filter(
-    (b) => b.status === "RESERVED" || b.status === "ACTIVE"
+    (b) => b.status === "RESERVED" || b.status === "ACTIVE" || b.status === "HOLD"
   );
   const recentPastBookings = vehicle.bookings
     .filter((b) => b.status === "COMPLETED" || b.status === "CANCELLED")

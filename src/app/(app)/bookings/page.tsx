@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { updateInquiryStatus } from "./actions";
 
 export default async function BookingsPage() {
   const { organizationId } = await requirePermission("bookings");
@@ -11,6 +12,11 @@ export default async function BookingsPage() {
     where: { organizationId },
     include: { vehicle: true, customer: true },
     orderBy: { startDate: "desc" },
+  });
+  const inquiries = await prisma.bookingInquiry.findMany({
+    where: { organizationId, status: { in: ["NEW", "CONTACTED"] } },
+    include: { vehicle: true, customer: true },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
@@ -27,6 +33,60 @@ export default async function BookingsPage() {
           </Link>
         }
       />
+
+      {inquiries.length > 0 && (
+        <div className="mb-6 overflow-hidden rounded-xl border border-amber-800/50 bg-amber-950/20">
+          <div className="border-b border-amber-800/50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-300">
+              {inquiries.length} callback request{inquiries.length === 1 ? "" : "s"} — no payment, follow up to close
+            </p>
+          </div>
+          <table className="w-full text-left text-sm">
+            <tbody className="divide-y divide-amber-900/50">
+              {inquiries.map((inq) => {
+                const markContacted = updateInquiryStatus.bind(null, inq.id, "CONTACTED");
+                const markConverted = updateInquiryStatus.bind(null, inq.id, "CONVERTED");
+                const markClosed = updateInquiryStatus.bind(null, inq.id, "CLOSED");
+                return (
+                  <tr key={inq.id}>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-slate-100">{inq.customer.name}</div>
+                      <div className="text-xs text-slate-400">
+                        {inq.customer.phone} · {inq.customer.email}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {inq.vehicle.year} {inq.vehicle.make} {inq.vehicle.model}
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {formatDate(inq.startDate)} – {formatDate(inq.endDate)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-400">{inq.message}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={inq.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs">
+                      <div className="flex justify-end gap-2">
+                        {inq.status === "NEW" && (
+                          <form action={markContacted}>
+                            <button className="font-medium text-sky-400 hover:underline">Mark Contacted</button>
+                          </form>
+                        )}
+                        <form action={markConverted}>
+                          <button className="font-medium text-emerald-400 hover:underline">Converted</button>
+                        </form>
+                        <form action={markClosed}>
+                          <button className="font-medium text-slate-500 hover:underline">Dismiss</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-slate-800">
         <table className="w-full text-left text-sm">

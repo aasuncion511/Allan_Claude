@@ -35,6 +35,7 @@ export async function updatePaymentSettings(formData: FormData) {
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
   const reservationFeeAmount = Number(formData.get("reservationFeeAmount") ?? 500);
+  const holdFeeAmount = Number(formData.get("holdFeeAmount") ?? 350);
 
   await prisma.organization.update({
     where: { id: organizationId },
@@ -44,6 +45,7 @@ export async function updatePaymentSettings(formData: FormData) {
       paymongoWebhookSecret: field("paymongoWebhookSecret"),
       paymongoLiveMode: formData.get("paymongoLiveMode") === "on",
       reservationFeeAmount: Number.isFinite(reservationFeeAmount) ? reservationFeeAmount : 500,
+      holdFeeAmount: Number.isFinite(holdFeeAmount) ? holdFeeAmount : 350,
     },
   });
 

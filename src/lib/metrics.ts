@@ -42,7 +42,10 @@ export async function getVehicleMonthlySummary(
 ): Promise<MonthlyRow[]> {
   const [bookings, expenses, maintenance, fuel] = await Promise.all([
     prisma.booking.findMany({
-      where: { organizationId, vehicleId, status: { not: "CANCELLED" } },
+      // HOLD is excluded — it's not a confirmed booking yet (just a 2-hour
+      // placeholder), so its full rental total shouldn't count as revenue
+      // until it converts to RESERVED/ACTIVE.
+      where: { organizationId, vehicleId, status: { notIn: ["CANCELLED", "HOLD"] } },
       select: { startDate: true, totalAmount: true },
     }),
     prisma.expense.findMany({

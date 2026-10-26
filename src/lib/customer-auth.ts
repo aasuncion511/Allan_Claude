@@ -5,12 +5,18 @@ import { getCustomerSessionId } from "@/lib/customer-session";
 
 export { hashPassword, verifyPassword };
 
-/** The logged-in renter, if any — scoped to whichever org they registered with. */
+/**
+ * The renter tied to this browser's session cookie, if any. A customer can
+ * be recognized this way whether or not they've ever set a password — the
+ * signed cookie (set the moment they give their contact details to book) is
+ * proof enough for this device. A password is only needed to sign in from a
+ * different device later.
+ */
 export async function getCurrentCustomer() {
   const customerId = await getCustomerSessionId();
   if (!customerId) return null;
   return prisma.customer.findFirst({
-    where: { id: customerId, passwordHash: { not: null } },
+    where: { id: customerId },
     include: { organization: { select: { id: true, name: true, slug: true } } },
   });
 }

@@ -101,6 +101,14 @@ export async function updateBooking(bookingId: string, formData: FormData) {
   redirect(`/bookings`);
 }
 
+export async function updateInquiryStatus(inquiryId: string, status: "CONTACTED" | "CONVERTED" | "CLOSED") {
+  const { organizationId } = await requirePermission("bookings");
+  const existing = await prisma.bookingInquiry.findFirst({ where: { id: inquiryId, organizationId } });
+  if (!existing) notFound();
+  await prisma.bookingInquiry.update({ where: { id: inquiryId }, data: { status } });
+  revalidatePath("/bookings");
+}
+
 export async function deleteBooking(bookingId: string) {
   const { organizationId } = await requirePermission("bookings");
   const booking = await prisma.booking.findFirst({

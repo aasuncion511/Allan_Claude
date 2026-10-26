@@ -5,6 +5,7 @@ import { requireCustomerForOrg } from "@/lib/customer-auth";
 import { customerLogoutAction } from "../customer-actions";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { ConvertHoldButton } from "../confirmed/convert-hold-button";
 
 export default async function CustomerAccountPage({
   params,
@@ -23,6 +24,8 @@ export default async function CustomerAccountPage({
   });
 
   const logout = customerLogoutAction.bind(null, slug);
+  const now = new Date();
+  const activeHolds = bookings.filter((b) => b.status === "HOLD" && b.holdExpiresAt && b.holdExpiresAt > now);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
@@ -42,6 +45,22 @@ export default async function CustomerAccountPage({
           </button>
         </form>
       </div>
+
+      {activeHolds.map((hold) => {
+        const balance = Math.max(0, org.reservationFeeAmount - hold.amountPaid);
+        return (
+          <div key={hold.id} className="mb-6 rounded-xl border border-purple-200 bg-purple-50 p-5">
+            <p className="font-semibold text-slate-900">
+              {hold.vehicle.year} {hold.vehicle.make} {hold.vehicle.model} is held until{" "}
+              {hold.holdExpiresAt!.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Confirm now to lock it in — your {formatCurrency(hold.amountPaid)} hold fee is credited toward the total.
+            </p>
+            {balance > 0 && <ConvertHoldButton slug={slug} bookingId={hold.id} balance={balance} />}
+          </div>
+        );
+      })}
 
       <h2 className="mb-3 text-lg font-semibold text-slate-900">
         Your Bookings

@@ -19,10 +19,18 @@ enum VehicleStatus {
 }
 
 enum BookingStatus {
+  HOLD
   RESERVED
   ACTIVE
   COMPLETED
   CANCELLED
+}
+
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  CLOSED
 }
 
 enum PaymentStatus {
@@ -95,6 +103,7 @@ model Organization {
   paymongoWebhookSecret String?
   paymongoLiveMode     Boolean  @default(false)
   reservationFeeAmount Float    @default(500)
+  holdFeeAmount        Float    @default(350)
 
   // GoHighLevel CRM (organization's own existing sub-account/location)
   ghlLocationId        String?
@@ -104,6 +113,7 @@ model Organization {
   vehicles         Vehicle[]
   customers        Customer[]
   bookings         Booking[]
+  bookingInquiries BookingInquiry[]
   expenses         Expense[]
   maintenanceLogs  MaintenanceLog[]
   fuelLogs         FuelLog[]
@@ -151,6 +161,7 @@ model Vehicle {
 
   organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   bookings      Booking[]
+  bookingInquiries BookingInquiry[]
   expenses      Expense[]
   maintenanceLogs MaintenanceLog[]
   fuelLogs      FuelLog[]
@@ -175,6 +186,7 @@ model Customer {
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   bookings       Booking[]
+  bookingInquiries BookingInquiry[]
 
   @@unique([organizationId, email])
   @@index([organizationId, name])
@@ -196,6 +208,9 @@ model Booking {
   amountPaid       Float    @default(0)
   paymentStatus    PaymentStatus @default(UNPAID)
   paymongoCheckoutId String?
+  /// Set only while status = HOLD. The unit is blocked on the calendar until
+  /// this time; if the hold isn't converted before it passes, it's released.
+  holdExpiresAt    DateTime?
   pickupLocation   String?
   dropoffLocation  String?
   notes            String?
@@ -211,6 +226,28 @@ model Booking {
   @@index([customerId])
   @@index([startDate, endDate])
   @@index([paymongoCheckoutId])
+}
+
+/// A "request a callback" lead from the storefront — no payment, no calendar
+/// hold. Staff follow up and create a real Booking manually if it converts.
+model BookingInquiry {
+  id             String        @id @default(cuid())
+  organizationId String
+  vehicleId      String
+  customerId     String
+  startDate      DateTime
+  endDate        DateTime
+  message        String?
+  status         InquiryStatus @default(NEW)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([vehicleId])
 }
 
 model Expense {
