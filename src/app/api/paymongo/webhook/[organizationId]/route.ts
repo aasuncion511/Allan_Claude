@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/db";
 import { verifyWebhookSignature } from "@/lib/paymongo";
-import { isVehicleAvailable } from "@/lib/availability";
-import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
-import { HOLD_WINDOW_MS } from "@/lib/hold";
-import { sendBookingConfirmationEmail } from "@/lib/booking-contract";
+import { confirmHoldPayment, notifyReservationConfirmed } from "@/lib/holds";
 
 /**
  * Per-organization PayMongo webhook endpoint. Each org registers its own
@@ -40,154 +37,31 @@ export async function POST(
     const session = event.data.attributes.data;
     const checkoutId: string = session?.id;
     const metadata = (session?.attributes?.metadata ?? {}) as Record<string, string>;
-    const kind =
-      metadata.kind === "hold" || metadata.kind === "convert" || metadata.kind === "charge"
-        ? metadata.kind
-        : "reservation";
 
     if (!checkoutId) return Response.json({ received: true });
 
-    if (kind === "charge") {
+    if (metadata.kind === "charge") {
       await handleCharge(org.id, checkoutId, metadata);
-      return Response.json({ received: true });
-    }
-
-    const alreadyHandled = await prisma.booking.findFirst({ where: { paymongoCheckoutId: checkoutId } });
-    if (alreadyHandled) return Response.json({ received: true });
-
-    if (kind === "convert") {
-      await handleConvert(org.id, checkoutId, metadata);
-    } else {
+    } else if (metadata.kind === "reservation_v2") {
+      // Confirms an EXISTING free hold (created well before checkout) —
+      // never creates a booking from scratch. confirmHoldPayment is
+      // idempotent via its `status !== "HOLD"` guard, so a duplicate/
+      // out-of-order webhook for an already-confirmed booking is a safe
+      // no-op (v2 handoff acceptance tests 14-15).
       const proto = req.headers.get("x-forwarded-proto") ?? "https";
       const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
-      await handleNewBooking(org, checkoutId, kind, metadata, baseUrl);
+      const { bookingId } = metadata;
+      if (bookingId) {
+        const result = await confirmHoldPayment(bookingId, checkoutId);
+        if (result.confirmed) await notifyReservationConfirmed(bookingId, baseUrl);
+      }
     }
+    // Any other/unrecognized kind is ignored — nothing in this codebase
+    // issues checkouts without a recognized kind in metadata.
   }
 
   return Response.json({ received: true });
-}
-
-async function handleNewBooking(
-  org: { id: string; reservationFeeAmount: number; holdFeeAmount: number; ghlLocationId: string | null; ghlApiToken: string | null },
-  checkoutId: string,
-  kind: "reservation" | "hold",
-  metadata: Record<string, string>,
-  baseUrl: string
-) {
-  const {
-    vehicleId,
-    customerId,
-    startDate: startDateRaw,
-    endDate: endDateRaw,
-    dailyRate: dailyRateRaw,
-    totalAmount: totalAmountRaw,
-    amountPaid: amountPaidRaw,
-    rentalOption,
-    pickupMethod,
-    dropoffMethod,
-    pickupLocation,
-    dropoffLocation,
-    startTime,
-    endTime,
-    excessHours: excessHoursRaw,
-    carwashRequested,
-    destinationDetails,
-    purposeOfTravel,
-    howFoundUs,
-    driverFee: driverFeeRaw,
-    deliveryFee: deliveryFeeRaw,
-    dropoffFee: dropoffFeeRaw,
-    carwashFee: carwashFeeRaw,
-    excessTimeFee: excessTimeFeeRaw,
-  } = metadata;
-
-  if (!vehicleId || !customerId || !startDateRaw || !endDateRaw) return;
-
-  const startDate = new Date(startDateRaw);
-  const endDate = new Date(endDateRaw);
-  const dailyRate = Number(dailyRateRaw ?? 0);
-  const totalAmount = Number(totalAmountRaw ?? 0);
-  const amountPaid = Number(amountPaidRaw ?? (kind === "hold" ? org.holdFeeAmount : org.reservationFeeAmount));
-
-  // Best-effort re-check; in the rare case of a double-booked race, we still
-  // honor the booking since payment has already been captured — flag it for
-  // staff to resolve manually rather than silently drop it.
-  const stillAvailable = await isVehicleAvailable(vehicleId, startDate, endDate);
-  const now = new Date();
-  const isHold = kind === "hold";
-
-  const booking = await prisma.booking.create({
-    data: {
-      organizationId: org.id,
-      vehicleId,
-      customerId,
-      startDate,
-      endDate,
-      status: isHold ? "HOLD" : startDate <= now && endDate >= now ? "ACTIVE" : "RESERVED",
-      holdExpiresAt: isHold ? new Date(now.getTime() + HOLD_WINDOW_MS) : null,
-      source: "ONLINE",
-      dailyRate,
-      totalAmount,
-      amountPaid,
-      paymentStatus: "PAID",
-      paymongoCheckoutId: checkoutId,
-      rentalOption: rentalOption === "WITH_DRIVER" ? "WITH_DRIVER" : "SELF_DRIVE",
-      pickupMethod: pickupMethod === "DELIVERED" ? "DELIVERED" : "GARAGE",
-      dropoffMethod: dropoffMethod === "DELIVERED" ? "DELIVERED" : "GARAGE",
-      pickupLocation: pickupLocation || null,
-      dropoffLocation: dropoffLocation || null,
-      startTime: startTime || null,
-      endTime: endTime || null,
-      excessHours: Number(excessHoursRaw ?? 0) || 0,
-      carwashRequested: carwashRequested === "true",
-      destinationDetails: destinationDetails || null,
-      purposeOfTravel: purposeOfTravel || null,
-      howFoundUs: howFoundUs || null,
-      driverFee: Number(driverFeeRaw ?? 0) || 0,
-      deliveryFee: Number(deliveryFeeRaw ?? 0) || 0,
-      dropoffFee: Number(dropoffFeeRaw ?? 0) || 0,
-      carwashFee: Number(carwashFeeRaw ?? 0) || 0,
-      excessTimeFee: Number(excessTimeFeeRaw ?? 0) || 0,
-      notes: stillAvailable
-        ? null
-        : "⚠ Booked online while another booking/hold overlapped these dates — please review.",
-    },
-  });
-
-  if (!isHold && startDate <= now && endDate >= now) {
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
-    if (vehicle && vehicle.status !== "MAINTENANCE" && vehicle.status !== "OUT_OF_SERVICE") {
-      await prisma.vehicle.update({ where: { id: vehicleId }, data: { status: "BOOKED" } });
-    }
-  }
-
-  if (isGhlConfigured(org)) {
-    const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-    if (customer) {
-      const tags = [isHold ? "hold-created" : "booked-online"];
-      if (purposeOfTravel) tags.push(`purpose:${purposeOfTravel}`);
-      if (howFoundUs) tags.push(`source:${howFoundUs}`);
-      await upsertGhlContact(
-        { locationId: org.ghlLocationId!, apiToken: org.ghlApiToken! },
-        {
-          name: customer.name,
-          email: customer.email ?? "",
-          phone: customer.phone,
-          tags,
-        }
-      );
-    }
-  }
-
-  // Best-effort — a verified payment just landed, so mail the client their
-  // T&Cs, e-sign link, and itemized e-invoice. Never blocks the webhook.
-  try {
-    await sendBookingConfirmationEmail(booking.id, baseUrl);
-  } catch {
-    // Already logged/persisted inside sendBookingConfirmationEmail's own
-    // try/catch paths; this outer guard is just extra safety.
-  }
 }
 
 async function handleCharge(organizationId: string, checkoutId: string, metadata: Record<string, string>) {
@@ -207,32 +81,4 @@ async function handleCharge(organizationId: string, checkoutId: string, metadata
       data: { amountPaid: { increment: charge.amount } },
     }),
   ]);
-}
-
-async function handleConvert(organizationId: string, checkoutId: string, metadata: Record<string, string>) {
-  const { bookingId, amountPaid: amountPaidRaw } = metadata;
-  if (!bookingId) return;
-
-  const booking = await prisma.booking.findFirst({ where: { id: bookingId, organizationId } });
-  if (!booking || booking.status !== "HOLD") return;
-
-  const now = new Date();
-  const additionalPaid = Number(amountPaidRaw ?? 0);
-
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: {
-      status: booking.startDate <= now && booking.endDate >= now ? "ACTIVE" : "RESERVED",
-      holdExpiresAt: null,
-      amountPaid: booking.amountPaid + additionalPaid,
-      paymongoCheckoutId: checkoutId,
-    },
-  });
-
-  if (booking.startDate <= now && booking.endDate >= now) {
-    const vehicle = await prisma.vehicle.findUnique({ where: { id: booking.vehicleId } });
-    if (vehicle && vehicle.status !== "MAINTENANCE" && vehicle.status !== "OUT_OF_SERVICE") {
-      await prisma.vehicle.update({ where: { id: booking.vehicleId }, data: { status: "BOOKED" } });
-    }
-  }
 }

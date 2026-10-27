@@ -69,6 +69,94 @@ export async function createCheckoutSession(
   };
 }
 
+export type CheckoutSessionStatus = {
+  id: string;
+  /** Derived from the most recent payment attached to the session, if any. */
+  paymentState: "paid" | "pending" | "processing" | "failed" | "unpaid";
+  paymentId: string | null;
+};
+
+function derivePaymentState(json: {
+  data: { attributes: { payments?: { id: string; attributes: { status: string } }[] } };
+}): CheckoutSessionStatus["paymentState"] {
+  const payments = json.data.attributes.payments ?? [];
+  if (payments.length === 0) return "unpaid";
+  // Most recent payment attempt wins — PayMongo appends new attempts to this array.
+  const latest = payments[payments.length - 1];
+  switch (latest.attributes.status) {
+    case "paid":
+      return "paid";
+    case "pending":
+      return "pending";
+    case "processing":
+      return "processing";
+    case "failed":
+      return "failed";
+    default:
+      return "unpaid";
+  }
+}
+
+/**
+ * Retrieves the current state of a checkout session — used for webhook
+ * reconciliation and before/after expiring, since redirect URLs and even
+ * webhooks can't be fully trusted alone (delayed/duplicate delivery).
+ * See https://developers.paymongo.com/reference/retrieve-a-checkout-session
+ */
+export async function getCheckoutSession(
+  secretKey: string,
+  checkoutSessionId: string
+): Promise<CheckoutSessionStatus> {
+  const res = await fetch(`${PAYMONGO_API}/checkout_sessions/${checkoutSessionId}`, {
+    headers: { Authorization: authHeader(secretKey) },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`PayMongo get checkout session failed (${res.status}): ${body}`);
+  }
+  const json = await res.json();
+  const payments = json.data.attributes.payments ?? [];
+  return {
+    id: json.data.id,
+    paymentState: derivePaymentState(json),
+    paymentId: payments.length > 0 ? payments[payments.length - 1].id : null,
+  };
+}
+
+/**
+ * Explicitly expires a checkout session (PayMongo sessions never
+ * auto-expire). PayMongo refuses this when a payment on the session is
+ * already paid, pending, or processing — callers MUST treat a refusal as
+ * "do not release inventory yet", never force it.
+ * See https://developers.paymongo.com/reference/expire-a-checkout-session
+ */
+export async function expireCheckoutSession(
+  secretKey: string,
+  checkoutSessionId: string
+): Promise<{ expired: true } | { expired: false; reason: string; paymentState: CheckoutSessionStatus["paymentState"] }> {
+  const res = await fetch(`${PAYMONGO_API}/checkout_sessions/${checkoutSessionId}/expire`, {
+    method: "POST",
+    headers: { Authorization: authHeader(secretKey) },
+  });
+
+  if (res.ok) {
+    // Verify, don't just trust the 200 — confirm no payment slipped in during the race.
+    const status = await getCheckoutSession(secretKey, checkoutSessionId);
+    if (status.paymentState === "paid" || status.paymentState === "pending" || status.paymentState === "processing") {
+      return { expired: false, reason: "Payment landed during expiry — not released.", paymentState: status.paymentState };
+    }
+    return { expired: true };
+  }
+
+  const body = await res.text().catch(() => "");
+  try {
+    const status = await getCheckoutSession(secretKey, checkoutSessionId);
+    return { expired: false, reason: `PayMongo refused expiry (${res.status}): ${body.slice(0, 200)}`, paymentState: status.paymentState };
+  } catch {
+    return { expired: false, reason: `PayMongo refused expiry (${res.status}): ${body.slice(0, 200)}`, paymentState: "unpaid" };
+  }
+}
+
 /**
  * Verifies a PayMongo webhook signature. Header format:
  * "t=<timestamp>,te=<test_signature>,li=<live_signature>"

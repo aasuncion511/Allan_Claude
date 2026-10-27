@@ -14,6 +14,9 @@ function parseVehicleForm(formData: FormData) {
     year: Number(formData.get("year")),
     color: String(formData.get("color") ?? "").trim() || null,
     category: String(formData.get("category") ?? "").trim() || null,
+    reservationCategory: (["SEDAN", "SUV", "PICKUP"].includes(String(formData.get("reservationCategory")))
+      ? String(formData.get("reservationCategory"))
+      : null) as "SEDAN" | "SUV" | "PICKUP" | null,
     seats: seatsRaw ? Number(seatsRaw) : null,
     transmission: String(formData.get("transmission") ?? "").trim() || null,
     description: String(formData.get("description") ?? "").trim() || null,

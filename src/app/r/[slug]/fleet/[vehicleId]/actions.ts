@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { isVehicleAvailable } from "@/lib/availability";
-import { createCheckoutSession, pesosToCentavos } from "@/lib/paymongo";
+import { createCheckoutSession, getCheckoutSession, pesosToCentavos } from "@/lib/paymongo";
 import { getBaseUrl } from "@/lib/url";
 import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
 import { computeBookingPricing, type RentalOption, type BookingLocationMethod } from "@/lib/booking-pricing";
+import { createOrResumeHold, getHoldState, type HoldState } from "@/lib/holds";
+import type { ReservationCategory } from "@/lib/reservation-pricing";
 
 type TripDetails = {
   rentalOption: RentalOption;
@@ -87,7 +89,8 @@ export async function checkAvailabilityAction(
   if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate <= startDate) {
     return { available: false, error: "Please choose a valid date range." };
   }
-  const available = await isVehicleAvailable(vehicleId, startDate, endDate);
+  const customer = await getCurrentCustomer();
+  const available = await isVehicleAvailable(vehicleId, startDate, endDate, undefined, customer?.id);
   return available
     ? { available: true }
     : { available: false, error: "Those dates overlap an existing booking or hold. Pick different dates." };
@@ -111,15 +114,23 @@ async function loadBookableContext(slug: string, vehicleId: string) {
 
 export type BookingCheckoutState = { error?: string } | undefined;
 
-/** kind="reservation" pays the full reservation fee for an instant confirmed booking.
- *  kind="hold" pays the smaller hold fee to block the calendar for 2 hours. */
-export async function createBookingCheckout(
+export type HoldActionState =
+  | { error?: string; bookingId?: undefined }
+  | { bookingId: string; serverNowUtc: string; expiresAtUtc: string; reservationFee: number; error?: undefined }
+  | undefined;
+
+/**
+ * Creates (or resumes) a FREE, server-controlled hold — no payment, no
+ * checkout. The 25-minute (org-configured) expiry is set once, here, and is
+ * never touched again by refresh/navigation/PayMongo round-trips. See
+ * src/lib/holds.ts for the atomic concurrency guarantee.
+ */
+export async function createOrResumeHoldAction(
   slug: string,
   vehicleId: string,
-  kind: "reservation" | "hold",
-  _prevState: BookingCheckoutState,
+  _prevState: HoldActionState,
   formData: FormData
-): Promise<BookingCheckoutState> {
+): Promise<HoldActionState> {
   const range = parseDateRange(formData);
   if ("error" in range) return range;
   const { startDate, endDate } = range;
@@ -131,15 +142,9 @@ export async function createBookingCheckout(
   const trip = parseTripDetails(formData, org);
   if ("error" in trip) return trip;
 
-  const available = await isVehicleAvailable(vehicleId, startDate, endDate);
+  const available = await isVehicleAvailable(vehicleId, startDate, endDate, undefined, customer.id);
   if (!available) {
     return { error: "Sorry, this unit is already booked or held for part of those dates. Please choose different dates." };
-  }
-
-  if (!org.paymongoSecretKey) {
-    return {
-      error: "Online payment isn't set up for this rental company yet. Please contact them directly to book.",
-    };
   }
 
   const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000));
@@ -157,58 +162,62 @@ export async function createBookingCheckout(
     carwashFeeAmount: org.carwashFeeAmount,
     excessHourlyRate: org.excessHourlyRate,
   });
-  const amount = kind === "hold" ? org.holdFeeAmount : org.reservationFeeAmount;
-  const baseUrl = await getBaseUrl();
 
-  let checkoutUrl: string;
-  try {
-    const session = await createCheckoutSession({
-      secretKey: org.paymongoSecretKey,
-      amountCentavos: pesosToCentavos(amount),
-      description:
-        kind === "hold"
-          ? `2-hour hold — ${vehicle.year} ${vehicle.make} ${vehicle.model} (${slug})`
-          : `Reservation fee — ${vehicle.year} ${vehicle.make} ${vehicle.model} (${slug})`,
-      successUrl: `${baseUrl}/r/${slug}/confirmed?vehicleId=${vehicleId}`,
-      cancelUrl: `${baseUrl}/r/${slug}/fleet/${vehicleId}`,
-      metadata: {
-        kind,
-        organizationId: org.id,
-        vehicleId: vehicle.id,
-        customerId: customer.id,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        dailyRate: String(vehicle.dailyRate),
-        totalAmount: String(pricing.totalAmount),
-        amountPaid: String(amount),
-        rentalOption: trip.rentalOption,
-        pickupMethod: trip.pickupMethod,
-        dropoffMethod: trip.dropoffMethod,
-        pickupLocation: trip.pickupLocation ?? "",
-        dropoffLocation: trip.dropoffLocation ?? "",
-        startTime: trip.startTime ?? "",
-        endTime: trip.endTime ?? "",
-        excessHours: String(trip.excessHours),
-        carwashRequested: String(trip.carwashRequested),
-        destinationDetails: trip.destinationDetails ?? "",
-        purposeOfTravel: trip.purposeOfTravel ?? "",
-        howFoundUs: trip.howFoundUs ?? "",
-        driverFee: String(pricing.driverFee),
-        deliveryFee: String(pricing.deliveryFee),
-        dropoffFee: String(pricing.dropoffFee),
-        carwashFee: String(pricing.carwashFee),
-        excessTimeFee: String(pricing.excessTimeFee),
-      },
-    });
-    checkoutUrl = session.checkoutUrl;
-  } catch {
-    return { error: "Couldn't start checkout. Please try again in a moment." };
-  }
-  redirect(checkoutUrl);
+  const result = await createOrResumeHold({
+    organizationId: org.id,
+    vehicleId: vehicle.id,
+    customerId: customer.id,
+    startDate,
+    endDate,
+    dailyRate: vehicle.dailyRate,
+    totalAmount: pricing.totalAmount,
+    org,
+    reservationCategory: vehicle.reservationCategory as ReservationCategory | null,
+    trip: {
+      rentalOption: trip.rentalOption,
+      pickupMethod: trip.pickupMethod,
+      dropoffMethod: trip.dropoffMethod,
+      pickupLocation: trip.pickupLocation,
+      dropoffLocation: trip.dropoffLocation,
+      startTime: trip.startTime,
+      endTime: trip.endTime,
+      excessHours: trip.excessHours,
+      carwashRequested: trip.carwashRequested,
+      destinationDetails: trip.destinationDetails,
+      purposeOfTravel: trip.purposeOfTravel,
+      howFoundUs: trip.howFoundUs,
+      driverFee: pricing.driverFee,
+      deliveryFee: pricing.deliveryFee,
+      dropoffFee: pricing.dropoffFee,
+      carwashFee: pricing.carwashFee,
+      excessTimeFee: pricing.excessTimeFee,
+    },
+  });
+
+  if (!result.ok) return { error: result.error };
+  return {
+    bookingId: result.bookingId,
+    serverNowUtc: result.serverNowUtc,
+    expiresAtUtc: result.expiresAtUtc,
+    reservationFee: result.reservationFee,
+  };
 }
 
-/** Pays the remaining balance of the reservation fee to convert an active HOLD into a confirmed booking. */
-export async function createHoldConversionCheckout(
+/** Resync point for the frontend countdown — never trust a local timer alone. */
+export async function getHoldStateAction(bookingId: string): Promise<HoldState | { status: "NOT_FOUND" }> {
+  const customer = await getCurrentCustomer();
+  if (!customer) return { status: "NOT_FOUND" };
+  return getHoldState(bookingId, customer.id);
+}
+
+/**
+ * Creates (or reuses) a PayMongo checkout session for the category
+ * reservation fee on an EXISTING free hold. Verified payment (via the
+ * webhook) is what actually confirms the booking — this just starts
+ * checkout. Never trusts a client-sent amount: the fee is read fresh from
+ * org config + the vehicle's reservationCategory every time.
+ */
+export async function createReservationCheckoutAction(
   slug: string,
   bookingId: string,
   _prevState: BookingCheckoutState,
@@ -225,50 +234,71 @@ export async function createHoldConversionCheckout(
     where: { id: bookingId, customerId: customer.id, organizationId: org.id },
     include: { vehicle: true },
   });
-  if (!booking) return { error: "Booking not found." };
+  if (!booking) return { error: "Hold not found." };
   if (booking.status !== "HOLD") return { error: "This hold is no longer active." };
   if (!booking.holdExpiresAt || booking.holdExpiresAt < new Date()) {
-    return { error: "This hold has expired. Please book again." };
+    return { error: "Your hold has expired. Please check availability again." };
   }
   if (!org.paymongoSecretKey) {
     return { error: "Online payment isn't set up for this rental company yet. Please contact them directly." };
   }
 
-  const balance = Math.max(0, org.reservationFeeAmount - booking.amountPaid);
+  // Use the fee snapshotted at hold creation, not today's org config — a
+  // mid-flight price change must never shift the amount under a customer
+  // whose timer is already running.
+  const amount = booking.reservationFeeDue;
+  if (!amount || amount <= 0) {
+    return { error: "Reservation pricing isn't configured for this vehicle. Please contact us directly." };
+  }
+
   const baseUrl = await getBaseUrl();
 
-  if (balance === 0) {
-    // Hold fee already covers the full reservation fee — confirm immediately, no second charge.
-    const now = new Date();
-    await prisma.booking.update({
-      where: { id: booking.id },
-      data: {
-        status: booking.startDate <= now && booking.endDate >= now ? "ACTIVE" : "RESERVED",
-        holdExpiresAt: null,
-      },
-    });
-    redirect(`/r/${slug}/confirmed?vehicleId=${booking.vehicleId}`);
+  // Reuse an existing unpaid/active checkout rather than creating a duplicate.
+  if (booking.paymongoCheckoutId && booking.paymongoCheckoutUrl) {
+    try {
+      const status = await getCheckoutSession(org.paymongoSecretKey, booking.paymongoCheckoutId);
+      if (status.paymentState === "unpaid" || status.paymentState === "failed") {
+        redirect(booking.paymongoCheckoutUrl);
+      }
+      // paid/pending/processing — a webhook may just be in flight; send them
+      // back to the confirmation page to see current status rather than
+      // starting a second charge attempt.
+      redirect(`/r/${slug}/confirmed?vehicleId=${booking.vehicleId}`);
+    } catch {
+      // Retrieval failed (network hiccup) — fall through and start a fresh session.
+    }
   }
 
   let checkoutUrl: string;
+  let checkoutId: string;
   try {
     const session = await createCheckoutSession({
       secretKey: org.paymongoSecretKey,
-      amountCentavos: pesosToCentavos(balance),
-      description: `Balance to confirm — ${booking.vehicle.year} ${booking.vehicle.make} ${booking.vehicle.model} (${slug})`,
+      amountCentavos: pesosToCentavos(amount),
+      description: `Reservation fee — ${booking.vehicle.year} ${booking.vehicle.make} ${booking.vehicle.model} (${slug})`,
       successUrl: `${baseUrl}/r/${slug}/confirmed?vehicleId=${booking.vehicleId}`,
-      cancelUrl: `${baseUrl}/r/${slug}/account`,
+      cancelUrl: `${baseUrl}/r/${slug}/fleet/${booking.vehicleId}`,
       metadata: {
-        kind: "convert",
+        kind: "reservation_v2",
         organizationId: org.id,
         bookingId: booking.id,
-        amountPaid: String(balance),
       },
     });
     checkoutUrl = session.checkoutUrl;
+    checkoutId = session.id;
   } catch {
     return { error: "Couldn't start checkout. Please try again in a moment." };
   }
+
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: {
+      paymongoCheckoutId: checkoutId,
+      paymongoCheckoutUrl: checkoutUrl,
+      checkoutInitiatedAt: booking.checkoutInitiatedAt ?? new Date(),
+    },
+  });
+
   redirect(checkoutUrl);
 }
 

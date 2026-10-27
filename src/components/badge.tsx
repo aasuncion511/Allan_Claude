@@ -3,6 +3,7 @@ const STATUS_STYLES: Record<string, string> = {
   BOOKED: "bg-sky-50 text-sky-700",
   RESERVED: "bg-warning-surface text-warning-text",
   HOLD: "bg-violet-50 text-violet-700",
+  PAYMENT_PENDING: "bg-warning-surface text-warning-text",
   MAINTENANCE: "bg-orange-50 text-orange-700",
   OUT_OF_SERVICE: "bg-danger-surface text-danger-text",
   ACTIVE: "bg-sky-50 text-sky-700",

@@ -13,13 +13,17 @@ import {
 import { saveContactAction, type SaveContactState } from "../../customer-actions";
 import {
   checkAvailabilityAction,
-  createBookingCheckout,
+  createOrResumeHoldAction,
+  createReservationCheckoutAction,
+  getHoldStateAction,
   createCallbackInquiry,
   createCorporateBooking,
+  type HoldActionState,
   type BookingCheckoutState,
   type InquiryState,
   type CorporateBookingState,
 } from "./actions";
+import { HoldCountdown, formatMMSS } from "@/components/hold-countdown";
 
 type Step = "dates" | "contact" | "trip" | "choose" | "requested";
 
@@ -80,8 +84,8 @@ export function BookingWidget({
   slug,
   vehicleId,
   dailyRate,
-  reservationFeeAmount,
-  holdFeeAmount,
+  reservationFee,
+  holdWindowSeconds,
   contactPhone,
   requirementsText,
   initialCustomer,
@@ -96,8 +100,8 @@ export function BookingWidget({
   slug: string;
   vehicleId: string;
   dailyRate: number;
-  reservationFeeAmount: number;
-  holdFeeAmount: number;
+  reservationFee: number | null;
+  holdWindowSeconds: number;
   contactPhone: string | null;
   requirementsText: string | null;
   initialCustomer: { name: string; email: string; phone: string; address: string } | null;
@@ -183,14 +187,31 @@ export function BookingWidget({
     }
   }, [contactState]);
 
-  const reservationAction = createBookingCheckout.bind(null, slug, vehicleId, "reservation");
-  const [reservationState, reservationFormAction, reservationPending] = useActionState<BookingCheckoutState, FormData>(
-    reservationAction,
+  const createHoldAction = createOrResumeHoldAction.bind(null, slug, vehicleId);
+  const [holdActionState, holdFormAction, holdPending] = useActionState<HoldActionState, FormData>(
+    createHoldAction,
     undefined
   );
+  const [heldBooking, setHeldBooking] = useState<
+    { bookingId: string; serverNowUtc: string; expiresAtUtc: string; reservationFee: number } | null
+  >(null);
+  useEffect(() => {
+    if (holdActionState?.bookingId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHeldBooking({
+        bookingId: holdActionState.bookingId,
+        serverNowUtc: holdActionState.serverNowUtc,
+        expiresAtUtc: holdActionState.expiresAtUtc,
+        reservationFee: holdActionState.reservationFee,
+      });
+    }
+  }, [holdActionState]);
 
-  const holdAction = createBookingCheckout.bind(null, slug, vehicleId, "hold");
-  const [holdState, holdFormAction, holdPending] = useActionState<BookingCheckoutState, FormData>(holdAction, undefined);
+  const reserveAction = createReservationCheckoutAction.bind(null, slug, heldBooking?.bookingId ?? "");
+  const [reserveState, reserveFormAction, reservePending] = useActionState<BookingCheckoutState, FormData>(
+    reserveAction,
+    undefined
+  );
 
   const inquiryAction = createCallbackInquiry.bind(null, slug, vehicleId);
   const [inquiryState, inquiryFormAction, inquiryPending] = useActionState<InquiryState, FormData>(
@@ -581,44 +602,94 @@ export function BookingWidget({
             </span>
           </label>
 
-          <div className="rounded-lg border border-emerald-200 bg-success-surface p-4">
-            <p className="font-semibold text-ink">Pay {formatCurrency(reservationFeeAmount)} — Confirm Instantly</p>
-            <p className="mt-1 text-xs text-slate-600">Your booking is locked in immediately, no waiting.</p>
-            <form action={reservationFormAction} className="mt-3">
-              <TripHiddenFields startDate={startDate} endDate={endDate} trip={trip} />
-              <button
-                type="submit"
-                disabled={!agreed || reservationPending}
-                className="w-full rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
-              >
-                {reservationPending ? "Redirecting to payment…" : `Pay ${formatCurrency(reservationFeeAmount)} & Reserve`}
-              </button>
-            </form>
-            {reservationState?.error && (
-              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{reservationState.error}</p>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-line p-4">
-            <p className="font-semibold text-ink">Pay {formatCurrency(holdFeeAmount)} — Hold for 2 Hours</p>
-            <p className="mt-1 text-xs text-slate-600">
-              Not ready to commit? Hold these dates for 2 hours. Non-refundable, but credited toward your reservation
-              fee if you confirm in time.
-            </p>
-            <form action={holdFormAction} className="mt-3">
-              <TripHiddenFields startDate={startDate} endDate={endDate} trip={trip} />
-              <button
-                type="submit"
-                disabled={!agreed || holdPending}
-                className="w-full rounded-lg border border-slate-900 px-4 py-3 text-sm font-semibold text-ink hover:bg-slate-50 disabled:opacity-50"
-              >
-                {holdPending ? "Redirecting to payment…" : `Pay ${formatCurrency(holdFeeAmount)} & Hold`}
-              </button>
-            </form>
-            {holdState?.error && (
-              <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{holdState.error}</p>
-            )}
-          </div>
+          {reservationFee == null ? (
+            <div className="rounded-lg border border-line p-4 text-sm text-slate-600">
+              Online reservation isn&apos;t set up for this vehicle yet — please use Request a Callback below, or call
+              us directly to book.
+            </div>
+          ) : !heldBooking ? (
+            <div className="rounded-lg border border-emerald-200 bg-success-surface p-4">
+              <p className="font-semibold text-ink">
+                Hold This Vehicle — FREE for {Math.round(holdWindowSeconds / 60)} Minutes
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                No payment required. Then pay {formatCurrency(reservationFee)} — non-refundable, credited toward your
+                rental total — to confirm.
+              </p>
+              <form action={holdFormAction} className="mt-3">
+                <TripHiddenFields startDate={startDate} endDate={endDate} trip={trip} />
+                <button
+                  type="submit"
+                  disabled={!agreed || holdPending}
+                  className="w-full rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                >
+                  {holdPending ? "Holding…" : `Hold This Vehicle — FREE for ${Math.round(holdWindowSeconds / 60)} Minutes`}
+                </button>
+              </form>
+              {holdActionState?.error && (
+                <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{holdActionState.error}</p>
+              )}
+            </div>
+          ) : (
+            <HoldCountdown
+              bookingId={heldBooking.bookingId}
+              initialServerNowUtc={heldBooking.serverNowUtc}
+              initialExpiresAtUtc={heldBooking.expiresAtUtc}
+              getHoldState={getHoldStateAction}
+              onExpired={() => setHeldBooking(null)}
+            >
+              {({ remainingSeconds, status }) => {
+                if (status === "confirmed") {
+                  return (
+                    <div className="rounded-lg border border-emerald-200 bg-success-surface p-4 text-sm text-ink">
+                      ✅ Reservation confirmed — your vehicle is booked.
+                    </div>
+                  );
+                }
+                if (status === "payment_pending" || status === "checkout_pending") {
+                  return (
+                    <div className="rounded-lg border border-warning-text/40 bg-warning-surface p-4 text-sm text-warning-text">
+                      Payment is processing — please don&apos;t start another booking. This usually clears within a
+                      minute or two.
+                    </div>
+                  );
+                }
+                if (status === "expired") {
+                  return (
+                    <div className="rounded-lg border border-line p-4 text-sm text-slate-600">
+                      Your free hold expired. Please check availability again.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="rounded-lg border border-emerald-200 bg-success-surface p-4">
+                    <p className="font-semibold text-ink">
+                      Vehicle held for {formatMMSS(remainingSeconds)} — complete your {formatCurrency(heldBooking.reservationFee)}{" "}
+                      reservation to confirm.
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      Non-refundable, subject to our rental terms and applicable law — credited toward your rental
+                      total.
+                    </p>
+                    <form action={reserveFormAction} className="mt-3">
+                      <button
+                        type="submit"
+                        disabled={reservePending}
+                        className="w-full rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                      >
+                        {reservePending
+                          ? "Redirecting to payment…"
+                          : `Reserve Now — Pay ${formatCurrency(heldBooking.reservationFee)}`}
+                      </button>
+                    </form>
+                    {reserveState?.error && (
+                      <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{reserveState.error}</p>
+                    )}
+                  </div>
+                );
+              }}
+            </HoldCountdown>
+          )}
 
           <div className="rounded-lg border border-line p-4">
             <p className="font-semibold text-ink">Request a Callback</p>

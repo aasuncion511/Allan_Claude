@@ -5,7 +5,7 @@ import { requireCustomerForOrg } from "@/lib/customer-auth";
 import { customerLogoutAction } from "../customer-actions";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { ConvertHoldButton } from "../confirmed/convert-hold-button";
+import { ActiveHoldCard } from "./active-hold-card";
 
 export default async function CustomerAccountPage({
   params,
@@ -46,21 +46,17 @@ export default async function CustomerAccountPage({
         </form>
       </div>
 
-      {activeHolds.map((hold) => {
-        const balance = Math.max(0, org.reservationFeeAmount - hold.amountPaid);
-        return (
-          <div key={hold.id} className="mb-6 rounded-xl border border-purple-200 bg-purple-50 p-5">
-            <p className="font-semibold text-ink">
-              {hold.vehicle.year} {hold.vehicle.make} {hold.vehicle.model} is held until{" "}
-              {hold.holdExpiresAt!.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              Confirm now to lock it in — your {formatCurrency(hold.amountPaid)} hold fee is credited toward the total.
-            </p>
-            {balance > 0 && <ConvertHoldButton slug={slug} bookingId={hold.id} balance={balance} />}
-          </div>
-        );
-      })}
+      {activeHolds.map((hold) => (
+        <ActiveHoldCard
+          key={hold.id}
+          slug={slug}
+          bookingId={hold.id}
+          vehicleLabel={`${hold.vehicle.year} ${hold.vehicle.make} ${hold.vehicle.model}`}
+          reservationFee={hold.reservationFeeDue ?? 0}
+          serverNowUtc={now.toISOString()}
+          expiresAtUtc={hold.holdExpiresAt!.toISOString()}
+        />
+      ))}
 
       <h2 className="mb-3 text-lg font-semibold text-ink">
         Your Bookings

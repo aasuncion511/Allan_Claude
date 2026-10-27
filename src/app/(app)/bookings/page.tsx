@@ -138,7 +138,14 @@ export default async function BookingsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <StatusBadge status={b.status} />
+                  <StatusBadge status={b.status === "HOLD" && b.paymentStatus === "PENDING" ? "PAYMENT_PENDING" : b.status} />
+                  {b.status === "HOLD" && b.holdExpiresAt && (
+                    <div className="mt-1 text-xs text-ink-soft">
+                      {b.paymentStatus === "PENDING"
+                        ? "payment processing"
+                        : `free hold, expires ${b.holdExpiresAt.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link

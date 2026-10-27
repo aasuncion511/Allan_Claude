@@ -8,6 +8,12 @@ const STATUS_OPTIONS = [
 
 const CATEGORY_OPTIONS = ["Sedan", "SUV", "MPV", "Van", "Pickup", "Hatchback"];
 const TRANSMISSION_OPTIONS = ["Automatic", "Manual"];
+const RESERVATION_CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Not set — online reservation unavailable" },
+  { value: "SEDAN", label: "Sedan" },
+  { value: "SUV", label: "SUV" },
+  { value: "PICKUP", label: "Pick-up" },
+];
 
 type VehicleDefaults = {
   plateNumber?: string;
@@ -16,6 +22,7 @@ type VehicleDefaults = {
   year?: number;
   color?: string | null;
   category?: string | null;
+  reservationCategory?: string | null;
   seats?: number | null;
   transmission?: string | null;
   description?: string | null;
@@ -137,6 +144,23 @@ export function VehicleForm({
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className={label}>Reservation Pricing Category</label>
+          <select
+            name="reservationCategory"
+            defaultValue={defaults?.reservationCategory ?? ""}
+            className={field}
+          >
+            {RESERVATION_CATEGORY_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-ink-soft">
+            Drives the free-hold reservation fee — see Settings → Storefront.
+          </p>
         </div>
         <div>
           <label className={label}>Seats</label>
