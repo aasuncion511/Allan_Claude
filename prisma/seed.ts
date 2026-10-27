@@ -9,12 +9,12 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter });
 
 const VEHICLES = [
-  { plateNumber: "NBW 1234", make: "Toyota", model: "Vios", year: 2023, color: "White", dailyRate: 2000, odometerStart: 8000, category: "Sedan", seats: 5, transmission: "Automatic", featured: true, description: "A fuel-efficient sedan, perfect for city drives and out-of-town trips alike." },
-  { plateNumber: "NBW 5678", make: "Toyota", model: "Innova", year: 2022, color: "Silver", dailyRate: 3200, odometerStart: 21000, category: "Van", seats: 8, transmission: "Automatic", featured: true, description: "Spacious 8-seater, ideal for family outings and group travel." },
-  { plateNumber: "NCP 2211", make: "Mitsubishi", model: "Xpander", year: 2023, color: "Red", dailyRate: 2800, odometerStart: 12500, category: "MPV", seats: 7, transmission: "Automatic", featured: true, description: "A stylish, comfortable MPV with room for the whole family." },
-  { plateNumber: "NDR 4590", make: "Honda", model: "City", year: 2021, color: "Black", dailyRate: 2200, odometerStart: 35000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Reliable and economical — a great everyday sedan." },
-  { plateNumber: "NEF 7788", make: "Toyota", model: "Hiace", year: 2020, color: "White", dailyRate: 5500, odometerStart: 62000, category: "Van", seats: 12, transmission: "Manual", featured: true, description: "Our biggest van — perfect for large groups, airport transfers, and tours." },
-  { plateNumber: "NGH 3345", make: "Nissan", model: "Almera", year: 2022, color: "Gray", dailyRate: 1900, odometerStart: 18000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Our most affordable daily driver, without compromising on comfort." },
+  { plateNumber: "NBW 1234", make: "Toyota", model: "Vios", year: 2023, color: "White", dailyRate: 2000, odometerStart: 8000, category: "Sedan", seats: 5, transmission: "Automatic", featured: true, description: "A fuel-efficient sedan, perfect for city drives and out-of-town trips alike.", photoUrl: "/vehicles/toyota-vios.png" },
+  { plateNumber: "NBW 5678", make: "Toyota", model: "Innova", year: 2022, color: "Silver", dailyRate: 3200, odometerStart: 21000, category: "Van", seats: 8, transmission: "Automatic", featured: true, description: "Spacious 8-seater, ideal for family outings and group travel.", photoUrl: "/vehicles/toyota-innova.png" },
+  { plateNumber: "NCP 2211", make: "Mitsubishi", model: "Xpander", year: 2023, color: "Red", dailyRate: 2800, odometerStart: 12500, category: "MPV", seats: 7, transmission: "Automatic", featured: true, description: "A stylish, comfortable MPV with room for the whole family.", photoUrl: null },
+  { plateNumber: "NDR 4590", make: "Honda", model: "City", year: 2021, color: "Black", dailyRate: 2200, odometerStart: 35000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Reliable and economical — a great everyday sedan.", photoUrl: "/vehicles/honda-city.png" },
+  { plateNumber: "NEF 7788", make: "Toyota", model: "Hiace", year: 2020, color: "White", dailyRate: 5500, odometerStart: 62000, category: "Van", seats: 12, transmission: "Manual", featured: true, description: "Our biggest van — perfect for large groups, airport transfers, and tours.", photoUrl: null },
+  { plateNumber: "NGH 3345", make: "Nissan", model: "Almera", year: 2022, color: "Gray", dailyRate: 1900, odometerStart: 18000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Our most affordable daily driver, without compromising on comfort.", photoUrl: null },
 ];
 
 const CUSTOMERS = [
@@ -66,17 +66,17 @@ async function main() {
 
   const organization = await prisma.organization.create({
     data: {
-      name: "Reyna Car Rentals",
-      slug: "reyna-car-rentals",
+      name: "YourCarRental Company",
+      slug: "yourcarrental-company",
       subscriptionStatus: "ACTIVE",
       tagline: "Travel Made Easy and Fun!",
       aboutText:
-        "Reyna Car Rentals provides reliable and affordable cars for every trip — solo rides, family outings, and business travel. All our units are well-maintained and ready for the road.",
+        "YourCarRental Company provides reliable and affordable cars for every trip — solo rides, family outings, and business travel. All our units are well-maintained and ready for the road.",
       contactPhone: "+63 917 123 4567",
-      contactEmail: "hello@reynacarrentals.example",
+      contactEmail: "hello@yourcarrental.example",
       address: "123 Osmeña St, Cagayan de Oro City",
-      facebookUrl: "https://facebook.com/reynacarrentals",
-      instagramUrl: "https://instagram.com/reynacarrentals",
+      facebookUrl: "https://facebook.com/yourcarrental",
+      instagramUrl: "https://instagram.com/yourcarrental",
       requirementsText:
         "Two valid government IDs (including a driver's license) and proof of billing are required to complete a booking.",
       reservationFeeAmount: 500,
@@ -121,6 +121,7 @@ async function main() {
         transmission: v.transmission,
         description: v.description,
         featured: v.featured,
+        photoUrl: v.photoUrl,
         dailyRate: v.dailyRate,
         odometer: v.odometerStart,
         status: "AVAILABLE",
