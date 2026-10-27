@@ -4,25 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
-
-const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
-const MAX_LOGO_BYTES = 1.5 * 1024 * 1024; // 1.5MB — stored inline as a data URI, keep it small
-
-/** Reads an uploaded image file into a data: URI, or null if absent/invalid/oversize. */
-async function readLogoUpload(formData: FormData): Promise<string | null> {
-  const file = formData.get("logoFile");
-  if (!(file instanceof File) || file.size === 0) return null;
-  if (!ALLOWED_LOGO_TYPES.includes(file.type) || file.size > MAX_LOGO_BYTES) return null;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  return `data:${file.type};base64,${buffer.toString("base64")}`;
-}
+import { readImageUpload } from "@/lib/image-upload";
 
 export async function updateStorefrontProfile(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
 
-  const uploadedLogo = await readLogoUpload(formData);
+  const uploadedLogo = await readImageUpload(formData, "logoFile");
   const removeLogo = formData.get("removeLogo") === "on";
   const pastedLogoUrl = field("logoUrlText");
   const logoUrl = removeLogo ? null : (uploadedLogo ?? pastedLogoUrl ?? undefined);
