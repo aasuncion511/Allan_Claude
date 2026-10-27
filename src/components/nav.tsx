@@ -91,7 +91,7 @@ export function Nav({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-none flex-col bg-brand-deep text-white transition-transform duration-200 md:static md:z-auto md:w-60 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-none flex-col bg-brand-deep text-white transition-transform duration-200 md:static md:z-auto md:h-auto md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
