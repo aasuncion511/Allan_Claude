@@ -55,6 +55,16 @@ enum BookingSource {
   ONLINE
 }
 
+enum RentalOption {
+  SELF_DRIVE
+  WITH_DRIVER
+}
+
+enum BookingLocationMethod {
+  GARAGE
+  DELIVERED
+}
+
 enum ExpenseCategory {
   FUEL
   MAINTENANCE
@@ -113,6 +123,15 @@ model Organization {
   paymongoLiveMode     Boolean  @default(false)
   reservationFeeAmount Float    @default(500)
   holdFeeAmount        Float    @default(350)
+
+  // Booking detail add-ons — configured once, applied automatically so
+  // online payment stays instant/deterministic (no manual quoting).
+  offersDriverService  Boolean  @default(false)
+  driverFeePerDay      Float    @default(0)
+  deliveryFeeAmount    Float    @default(0)
+  dropoffFeeAmount     Float    @default(0)
+  carwashFeeAmount     Float    @default(0)
+  excessHourlyRate     Float    @default(0)
 
   // GoHighLevel CRM (organization's own existing sub-account/location)
   ghlLocationId        String?
@@ -227,6 +246,21 @@ model Booking {
   corporateClientId String?
   pickupLocation   String?
   dropoffLocation  String?
+  rentalOption     RentalOption @default(SELF_DRIVE)
+  pickupMethod     BookingLocationMethod @default(GARAGE)
+  dropoffMethod    BookingLocationMethod @default(GARAGE)
+  startTime        String?
+  endTime          String?
+  excessHours      Int      @default(0)
+  carwashRequested Boolean  @default(false)
+  destinationDetails String?
+  purposeOfTravel  String?
+  howFoundUs       String?
+  driverFee        Float    @default(0)
+  deliveryFee      Float    @default(0)
+  dropoffFee       Float    @default(0)
+  carwashFee       Float    @default(0)
+  excessTimeFee    Float    @default(0)
   notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

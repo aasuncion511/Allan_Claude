@@ -55,6 +55,74 @@ export default async function EditBookingPage({
         )
       )}
 
+      {booking.source === "ONLINE" && (
+        <div className="mb-6 rounded-xl border border-line bg-surface p-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+            Trip Details (from customer)
+          </h2>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-xs text-ink-soft">Rental Option</dt>
+              <dd className="text-ink">{booking.rentalOption === "WITH_DRIVER" ? "With Driver" : "Self Drive"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">Times</dt>
+              <dd className="text-ink">
+                {booking.startTime || "—"} → {booking.endTime || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">Pick-up</dt>
+              <dd className="text-ink">
+                {booking.pickupMethod === "DELIVERED" ? `Delivered: ${booking.pickupLocation}` : "At garage"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">Drop-off</dt>
+              <dd className="text-ink">
+                {booking.dropoffMethod === "DELIVERED" ? `Different: ${booking.dropoffLocation}` : "At garage"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">Carwash</dt>
+              <dd className="text-ink">{booking.carwashRequested ? "Requested" : "No"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">Anticipated Excess Hours</dt>
+              <dd className="text-ink">{booking.excessHours || 0}h</dd>
+            </div>
+            <div className="col-span-2 sm:col-span-3">
+              <dt className="text-xs text-ink-soft">Destination</dt>
+              <dd className="text-ink">{booking.destinationDetails || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">Purpose of Travel</dt>
+              <dd className="text-ink">{booking.purposeOfTravel || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-ink-soft">How They Found Us</dt>
+              <dd className="text-ink">{booking.howFoundUs || "—"}</dd>
+            </div>
+          </dl>
+          {(booking.driverFee > 0 ||
+            booking.deliveryFee > 0 ||
+            booking.dropoffFee > 0 ||
+            booking.carwashFee > 0 ||
+            booking.excessTimeFee > 0) && (
+            <div className="mt-4 border-t border-line pt-3 text-sm text-ink-soft">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-soft">Add-on Fees Included in Total</p>
+              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+                {booking.driverFee > 0 && <span>Driver: {formatCurrency(booking.driverFee)}</span>}
+                {booking.deliveryFee > 0 && <span>Delivery: {formatCurrency(booking.deliveryFee)}</span>}
+                {booking.dropoffFee > 0 && <span>Drop-off: {formatCurrency(booking.dropoffFee)}</span>}
+                {booking.carwashFee > 0 && <span>Carwash: {formatCurrency(booking.carwashFee)}</span>}
+                {booking.excessTimeFee > 0 && <span>Excess time: {formatCurrency(booking.excessTimeFee)}</span>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="rounded-xl border border-line bg-surface p-6">
         <BookingForm
           action={action}

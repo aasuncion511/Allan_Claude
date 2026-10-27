@@ -7,6 +7,61 @@ import { isVehicleAvailable } from "@/lib/availability";
 import { createCheckoutSession, pesosToCentavos } from "@/lib/paymongo";
 import { getBaseUrl } from "@/lib/url";
 import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
+import { computeBookingPricing, type RentalOption, type BookingLocationMethod } from "@/lib/booking-pricing";
+
+type TripDetails = {
+  rentalOption: RentalOption;
+  pickupMethod: BookingLocationMethod;
+  dropoffMethod: BookingLocationMethod;
+  pickupLocation: string | null;
+  dropoffLocation: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  excessHours: number;
+  carwashRequested: boolean;
+  destinationDetails: string | null;
+  purposeOfTravel: string | null;
+  howFoundUs: string | null;
+};
+
+/** Reads the trip-detail fields a customer filled in, re-validated against what this org
+ *  actually offers — a manipulated form can't unlock driver service an org doesn't provide. */
+function parseTripDetails(
+  formData: FormData,
+  org: { offersDriverService: boolean; carwashFeeAmount: number }
+): TripDetails | { error: string } {
+  const rentalOption: RentalOption =
+    org.offersDriverService && formData.get("rentalOption") === "WITH_DRIVER" ? "WITH_DRIVER" : "SELF_DRIVE";
+  const pickupMethod: BookingLocationMethod = formData.get("pickupMethod") === "DELIVERED" ? "DELIVERED" : "GARAGE";
+  const dropoffMethod: BookingLocationMethod = formData.get("dropoffMethod") === "DELIVERED" ? "DELIVERED" : "GARAGE";
+
+  const pickupLocation = String(formData.get("pickupLocation") ?? "").trim() || null;
+  if (pickupMethod === "DELIVERED" && !pickupLocation) {
+    return { error: "Please enter where you'd like the car delivered." };
+  }
+  const dropoffLocation = String(formData.get("dropoffLocation") ?? "").trim() || null;
+  if (dropoffMethod === "DELIVERED" && !dropoffLocation) {
+    return { error: "Please enter your drop-off location." };
+  }
+
+  const excessHoursRaw = Number(formData.get("excessHours"));
+  const excessHours = Number.isFinite(excessHoursRaw) ? Math.max(0, Math.min(24, Math.round(excessHoursRaw))) : 0;
+
+  return {
+    rentalOption,
+    pickupMethod,
+    dropoffMethod,
+    pickupLocation: pickupMethod === "DELIVERED" ? pickupLocation : null,
+    dropoffLocation: dropoffMethod === "DELIVERED" ? dropoffLocation : null,
+    startTime: String(formData.get("startTime") ?? "").trim() || null,
+    endTime: String(formData.get("endTime") ?? "").trim() || null,
+    excessHours,
+    carwashRequested: org.carwashFeeAmount > 0 && formData.get("carwashRequested") === "on",
+    destinationDetails: String(formData.get("destinationDetails") ?? "").trim() || null,
+    purposeOfTravel: String(formData.get("purposeOfTravel") ?? "").trim() || null,
+    howFoundUs: String(formData.get("howFoundUs") ?? "").trim() || null,
+  };
+}
 
 function parseDateRange(formData: FormData): { startDate: Date; endDate: Date } | { error: string } {
   const startDate = new Date(String(formData.get("startDate")));
@@ -73,6 +128,9 @@ export async function createBookingCheckout(
   if ("error" in ctx) return ctx;
   const { customer, org, vehicle } = ctx;
 
+  const trip = parseTripDetails(formData, org);
+  if ("error" in trip) return trip;
+
   const available = await isVehicleAvailable(vehicleId, startDate, endDate);
   if (!available) {
     return { error: "Sorry, this unit is already booked or held for part of those dates. Please choose different dates." };
@@ -85,7 +143,20 @@ export async function createBookingCheckout(
   }
 
   const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000));
-  const totalAmount = vehicle.dailyRate * days;
+  const pricing = computeBookingPricing({
+    dailyRate: vehicle.dailyRate,
+    days,
+    rentalOption: trip.rentalOption,
+    pickupMethod: trip.pickupMethod,
+    dropoffMethod: trip.dropoffMethod,
+    carwashRequested: trip.carwashRequested,
+    excessHours: trip.excessHours,
+    driverFeePerDay: org.driverFeePerDay,
+    deliveryFeeAmount: org.deliveryFeeAmount,
+    dropoffFeeAmount: org.dropoffFeeAmount,
+    carwashFeeAmount: org.carwashFeeAmount,
+    excessHourlyRate: org.excessHourlyRate,
+  });
   const amount = kind === "hold" ? org.holdFeeAmount : org.reservationFeeAmount;
   const baseUrl = await getBaseUrl();
 
@@ -108,8 +179,25 @@ export async function createBookingCheckout(
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         dailyRate: String(vehicle.dailyRate),
-        totalAmount: String(totalAmount),
+        totalAmount: String(pricing.totalAmount),
         amountPaid: String(amount),
+        rentalOption: trip.rentalOption,
+        pickupMethod: trip.pickupMethod,
+        dropoffMethod: trip.dropoffMethod,
+        pickupLocation: trip.pickupLocation ?? "",
+        dropoffLocation: trip.dropoffLocation ?? "",
+        startTime: trip.startTime ?? "",
+        endTime: trip.endTime ?? "",
+        excessHours: String(trip.excessHours),
+        carwashRequested: String(trip.carwashRequested),
+        destinationDetails: trip.destinationDetails ?? "",
+        purposeOfTravel: trip.purposeOfTravel ?? "",
+        howFoundUs: trip.howFoundUs ?? "",
+        driverFee: String(pricing.driverFee),
+        deliveryFee: String(pricing.deliveryFee),
+        dropoffFee: String(pricing.dropoffFee),
+        carwashFee: String(pricing.carwashFee),
+        excessTimeFee: String(pricing.excessTimeFee),
       },
     });
     checkoutUrl = session.checkoutUrl;
@@ -260,13 +348,29 @@ export async function createCorporateBooking(
     return { error: "Invalid company or access code." };
   }
 
+  const trip = parseTripDetails(formData, org);
+  if ("error" in trip) return trip;
+
   const available = await isVehicleAvailable(vehicleId, startDate, endDate);
   if (!available) {
     return { error: "Sorry, this unit is already booked or held for part of those dates. Please choose different dates." };
   }
 
   const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000));
-  const totalAmount = vehicle.dailyRate * days;
+  const pricing = computeBookingPricing({
+    dailyRate: vehicle.dailyRate,
+    days,
+    rentalOption: trip.rentalOption,
+    pickupMethod: trip.pickupMethod,
+    dropoffMethod: trip.dropoffMethod,
+    carwashRequested: trip.carwashRequested,
+    excessHours: trip.excessHours,
+    driverFeePerDay: org.driverFeePerDay,
+    deliveryFeeAmount: org.deliveryFeeAmount,
+    dropoffFeeAmount: org.dropoffFeeAmount,
+    carwashFeeAmount: org.carwashFeeAmount,
+    excessHourlyRate: org.excessHourlyRate,
+  });
   const now = new Date();
 
   await prisma.booking.create({
@@ -280,9 +384,26 @@ export async function createCorporateBooking(
       status: startDate <= now && endDate >= now ? "ACTIVE" : "RESERVED",
       source: "ONLINE",
       dailyRate: vehicle.dailyRate,
-      totalAmount,
+      totalAmount: pricing.totalAmount,
       amountPaid: 0,
       paymentStatus: "INVOICED",
+      rentalOption: trip.rentalOption,
+      pickupMethod: trip.pickupMethod,
+      dropoffMethod: trip.dropoffMethod,
+      pickupLocation: trip.pickupLocation,
+      dropoffLocation: trip.dropoffLocation,
+      startTime: trip.startTime,
+      endTime: trip.endTime,
+      excessHours: trip.excessHours,
+      carwashRequested: trip.carwashRequested,
+      destinationDetails: trip.destinationDetails,
+      purposeOfTravel: trip.purposeOfTravel,
+      howFoundUs: trip.howFoundUs,
+      driverFee: pricing.driverFee,
+      deliveryFee: pricing.deliveryFee,
+      dropoffFee: pricing.dropoffFee,
+      carwashFee: pricing.carwashFee,
+      excessTimeFee: pricing.excessTimeFee,
     },
   });
 

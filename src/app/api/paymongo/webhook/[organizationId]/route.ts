@@ -78,6 +78,23 @@ async function handleNewBooking(
     dailyRate: dailyRateRaw,
     totalAmount: totalAmountRaw,
     amountPaid: amountPaidRaw,
+    rentalOption,
+    pickupMethod,
+    dropoffMethod,
+    pickupLocation,
+    dropoffLocation,
+    startTime,
+    endTime,
+    excessHours: excessHoursRaw,
+    carwashRequested,
+    destinationDetails,
+    purposeOfTravel,
+    howFoundUs,
+    driverFee: driverFeeRaw,
+    deliveryFee: deliveryFeeRaw,
+    dropoffFee: dropoffFeeRaw,
+    carwashFee: carwashFeeRaw,
+    excessTimeFee: excessTimeFeeRaw,
   } = metadata;
 
   if (!vehicleId || !customerId || !startDateRaw || !endDateRaw) return;
@@ -110,6 +127,23 @@ async function handleNewBooking(
       amountPaid,
       paymentStatus: "PAID",
       paymongoCheckoutId: checkoutId,
+      rentalOption: rentalOption === "WITH_DRIVER" ? "WITH_DRIVER" : "SELF_DRIVE",
+      pickupMethod: pickupMethod === "DELIVERED" ? "DELIVERED" : "GARAGE",
+      dropoffMethod: dropoffMethod === "DELIVERED" ? "DELIVERED" : "GARAGE",
+      pickupLocation: pickupLocation || null,
+      dropoffLocation: dropoffLocation || null,
+      startTime: startTime || null,
+      endTime: endTime || null,
+      excessHours: Number(excessHoursRaw ?? 0) || 0,
+      carwashRequested: carwashRequested === "true",
+      destinationDetails: destinationDetails || null,
+      purposeOfTravel: purposeOfTravel || null,
+      howFoundUs: howFoundUs || null,
+      driverFee: Number(driverFeeRaw ?? 0) || 0,
+      deliveryFee: Number(deliveryFeeRaw ?? 0) || 0,
+      dropoffFee: Number(dropoffFeeRaw ?? 0) || 0,
+      carwashFee: Number(carwashFeeRaw ?? 0) || 0,
+      excessTimeFee: Number(excessTimeFeeRaw ?? 0) || 0,
       notes: stillAvailable
         ? null
         : "⚠ Booked online while another booking/hold overlapped these dates — please review.",
@@ -126,13 +160,16 @@ async function handleNewBooking(
   if (isGhlConfigured(org)) {
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (customer) {
+      const tags = [isHold ? "hold-created" : "booked-online"];
+      if (purposeOfTravel) tags.push(`purpose:${purposeOfTravel}`);
+      if (howFoundUs) tags.push(`source:${howFoundUs}`);
       await upsertGhlContact(
         { locationId: org.ghlLocationId!, apiToken: org.ghlApiToken! },
         {
           name: customer.name,
           email: customer.email ?? "",
           phone: customer.phone,
-          tags: [isHold ? "hold-created" : "booked-online"],
+          tags,
         }
       );
     }

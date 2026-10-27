@@ -103,6 +103,12 @@ export default async function VehicleDetailPage({
             requirementsText={org.requirementsText}
             initialCustomer={initialCustomer}
             corporateClients={corporateClients}
+            offersDriverService={org.offersDriverService}
+            driverFeePerDay={org.driverFeePerDay}
+            deliveryFeeAmount={org.deliveryFeeAmount}
+            dropoffFeeAmount={org.dropoffFeeAmount}
+            carwashFeeAmount={org.carwashFeeAmount}
+            excessHourlyRate={org.excessHourlyRate}
           />
         </div>
       )}

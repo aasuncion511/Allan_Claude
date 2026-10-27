@@ -82,6 +82,12 @@ async function main() {
       requirementsText:
         "Two valid government IDs (including a driver's license) and proof of billing are required to complete a booking.",
       reservationFeeAmount: 500,
+      offersDriverService: true,
+      driverFeePerDay: 800,
+      deliveryFeeAmount: 300,
+      dropoffFeeAmount: 400,
+      carwashFeeAmount: 200,
+      excessHourlyRate: 100,
     },
   });
   console.log(`Created organization: ${organization.name} (/r/${organization.slug})`);

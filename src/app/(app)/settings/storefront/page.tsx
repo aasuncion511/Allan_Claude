@@ -5,6 +5,7 @@ import { getBaseUrl } from "@/lib/url";
 import {
   updateStorefrontProfile,
   updatePaymentSettings,
+  updateBookingAddOns,
   updateGhlSettings,
   createFaq,
   deleteFaq,
@@ -204,6 +205,56 @@ export default async function StorefrontSettingsPage() {
           </div>
           <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save Payment Settings
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+          Booking Add-Ons
+        </h2>
+        <p className="mb-4 text-xs text-ink-soft">
+          Flat, automatic fees your renters see on the booking form — keeps online payment instant since nothing
+          needs a manual quote.
+        </p>
+        <form action={updateBookingAddOns} className="space-y-4">
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              name="offersDriverService"
+              type="checkbox"
+              defaultChecked={org.offersDriverService}
+              className="h-4 w-4 rounded border-line bg-surface"
+            />
+            Offer &ldquo;With Driver&rdquo; rentals
+          </label>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div>
+              <label className={label}>Driver Fee / day (₱)</label>
+              <input name="driverFeePerDay" type="number" step="0.01" defaultValue={org.driverFeePerDay} className={field} />
+            </div>
+            <div>
+              <label className={label}>Delivery Fee (₱)</label>
+              <input name="deliveryFeeAmount" type="number" step="0.01" defaultValue={org.deliveryFeeAmount} className={field} />
+              <p className="mt-1 text-xs text-ink-soft">For &ldquo;delivered to me&rdquo; pick-up.</p>
+            </div>
+            <div>
+              <label className={label}>Drop-off Fee (₱)</label>
+              <input name="dropoffFeeAmount" type="number" step="0.01" defaultValue={org.dropoffFeeAmount} className={field} />
+              <p className="mt-1 text-xs text-ink-soft">For drop-off at a different location.</p>
+            </div>
+            <div>
+              <label className={label}>Carwash Fee (₱)</label>
+              <input name="carwashFeeAmount" type="number" step="0.01" defaultValue={org.carwashFeeAmount} className={field} />
+              <p className="mt-1 text-xs text-ink-soft">0 hides the add-on entirely.</p>
+            </div>
+            <div>
+              <label className={label}>Excess Hour Rate (₱/hr)</label>
+              <input name="excessHourlyRate" type="number" step="0.01" defaultValue={org.excessHourlyRate} className={field} />
+              <p className="mt-1 text-xs text-ink-soft">0 hides the excess-hours field.</p>
+            </div>
+          </div>
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
+            Save Add-On Settings
           </button>
         </form>
       </section>

@@ -52,6 +52,29 @@ export async function updatePaymentSettings(formData: FormData) {
   revalidatePath("/settings/storefront");
 }
 
+export async function updateBookingAddOns(formData: FormData) {
+  const { organizationId } = await requirePermission("storefrontSettings");
+
+  const num = (name: string) => {
+    const value = Number(formData.get(name));
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  };
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: {
+      offersDriverService: formData.get("offersDriverService") === "on",
+      driverFeePerDay: num("driverFeePerDay"),
+      deliveryFeeAmount: num("deliveryFeeAmount"),
+      dropoffFeeAmount: num("dropoffFeeAmount"),
+      carwashFeeAmount: num("carwashFeeAmount"),
+      excessHourlyRate: num("excessHourlyRate"),
+    },
+  });
+
+  revalidatePath("/settings/storefront");
+}
+
 export async function updateGhlSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 

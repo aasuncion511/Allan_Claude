@@ -3,6 +3,13 @@
 import { useEffect, useState, useTransition } from "react";
 import { useActionState } from "react";
 import { formatCurrency } from "@/lib/format";
+import {
+  computeBookingPricing,
+  PURPOSE_OF_TRAVEL_OPTIONS,
+  HOW_FOUND_US_OPTIONS,
+  type RentalOption,
+  type BookingLocationMethod,
+} from "@/lib/booking-pricing";
 import { saveContactAction, type SaveContactState } from "../../customer-actions";
 import {
   checkAvailabilityAction,
@@ -14,7 +21,60 @@ import {
   type CorporateBookingState,
 } from "./actions";
 
-type Step = "dates" | "contact" | "choose" | "requested";
+type Step = "dates" | "contact" | "trip" | "choose" | "requested";
+
+type TripState = {
+  startTime: string;
+  endTime: string;
+  rentalOption: RentalOption;
+  pickupMethod: BookingLocationMethod;
+  dropoffMethod: BookingLocationMethod;
+  pickupLocation: string;
+  dropoffLocation: string;
+  carwashRequested: boolean;
+  excessHours: number;
+  destinationDetails: string;
+  purposeOfTravel: string;
+  howFoundUs: string;
+};
+
+const DEFAULT_TRIP: TripState = {
+  startTime: "08:00",
+  endTime: "08:00",
+  rentalOption: "SELF_DRIVE",
+  pickupMethod: "GARAGE",
+  dropoffMethod: "GARAGE",
+  pickupLocation: "",
+  dropoffLocation: "",
+  carwashRequested: false,
+  excessHours: 0,
+  destinationDetails: "",
+  purposeOfTravel: "",
+  howFoundUs: "",
+};
+
+/** Hidden inputs shared by every submit form (reservation, hold, callback, corporate) so each
+ *  carries the full trip detail set without repeating ~15 inputs per form. */
+function TripHiddenFields({ startDate, endDate, trip }: { startDate: string; endDate: string; trip: TripState }) {
+  return (
+    <>
+      <input type="hidden" name="startDate" value={startDate} />
+      <input type="hidden" name="endDate" value={endDate} />
+      <input type="hidden" name="startTime" value={trip.startTime} />
+      <input type="hidden" name="endTime" value={trip.endTime} />
+      <input type="hidden" name="rentalOption" value={trip.rentalOption} />
+      <input type="hidden" name="pickupMethod" value={trip.pickupMethod} />
+      <input type="hidden" name="dropoffMethod" value={trip.dropoffMethod} />
+      <input type="hidden" name="pickupLocation" value={trip.pickupLocation} />
+      <input type="hidden" name="dropoffLocation" value={trip.dropoffLocation} />
+      <input type="hidden" name="carwashRequested" value={trip.carwashRequested ? "on" : ""} />
+      <input type="hidden" name="excessHours" value={trip.excessHours} />
+      <input type="hidden" name="destinationDetails" value={trip.destinationDetails} />
+      <input type="hidden" name="purposeOfTravel" value={trip.purposeOfTravel} />
+      <input type="hidden" name="howFoundUs" value={trip.howFoundUs} />
+    </>
+  );
+}
 
 export function BookingWidget({
   slug,
@@ -26,6 +86,12 @@ export function BookingWidget({
   requirementsText,
   initialCustomer,
   corporateClients,
+  offersDriverService,
+  driverFeePerDay,
+  deliveryFeeAmount,
+  dropoffFeeAmount,
+  carwashFeeAmount,
+  excessHourlyRate,
 }: {
   slug: string;
   vehicleId: string;
@@ -36,6 +102,12 @@ export function BookingWidget({
   requirementsText: string | null;
   initialCustomer: { name: string; email: string; phone: string; address: string } | null;
   corporateClients: { id: string; name: string }[];
+  offersDriverService: boolean;
+  driverFeePerDay: number;
+  deliveryFeeAmount: number;
+  dropoffFeeAmount: number;
+  carwashFeeAmount: number;
+  excessHourlyRate: number;
 }) {
   const [step, setStep] = useState<Step>("dates");
   const today = new Date().toISOString().slice(0, 10);
@@ -45,17 +117,40 @@ export function BookingWidget({
   const [checking, startChecking] = useTransition();
   const [agreed, setAgreed] = useState(false);
   const [contact, setContact] = useState(initialCustomer);
+  const [trip, setTrip] = useState<TripState>(DEFAULT_TRIP);
 
   const nights =
     startDate && endDate
       ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000))
       : 0;
-  const subtotal = nights * dailyRate;
+
+  const pricing = computeBookingPricing({
+    dailyRate,
+    days: nights || 1,
+    rentalOption: trip.rentalOption,
+    pickupMethod: trip.pickupMethod,
+    dropoffMethod: trip.dropoffMethod,
+    carwashRequested: trip.carwashRequested,
+    excessHours: trip.excessHours,
+    driverFeePerDay,
+    deliveryFeeAmount,
+    dropoffFeeAmount,
+    carwashFeeAmount,
+    excessHourlyRate,
+  });
 
   function handleContinueFromDates() {
     setDateError(undefined);
     if (!startDate || !endDate || endDate <= startDate) {
       setDateError("Please choose a valid pick-up and drop-off date.");
+      return;
+    }
+    if (trip.pickupMethod === "DELIVERED" && !trip.pickupLocation.trim()) {
+      setDateError("Please enter where you'd like the car delivered.");
+      return;
+    }
+    if (trip.dropoffMethod === "DELIVERED" && !trip.dropoffLocation.trim()) {
+      setDateError("Please enter your drop-off location.");
       return;
     }
     startChecking(async () => {
@@ -64,7 +159,7 @@ export function BookingWidget({
         setDateError(result.error ?? "Those dates aren't available.");
         return;
       }
-      setStep(contact ? "choose" : "contact");
+      setStep(contact ? "trip" : "contact");
     });
   }
 
@@ -84,7 +179,7 @@ export function BookingWidget({
         address: contactState.address ?? "",
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStep("choose");
+      setStep("trip");
     }
   }, [contactState]);
 
@@ -145,11 +240,160 @@ export function BookingWidget({
                 className={field}
               />
             </div>
+            <div>
+              <label className={label}>Pick-up Time</label>
+              <input
+                type="time"
+                value={trip.startTime}
+                onChange={(e) => setTrip({ ...trip, startTime: e.target.value })}
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>Drop-off Time</label>
+              <input
+                type="time"
+                value={trip.endTime}
+                onChange={(e) => setTrip({ ...trip, endTime: e.target.value })}
+                className={field}
+              />
+            </div>
           </div>
+
+          {offersDriverService && (
+            <div>
+              <label className={label}>Rental Option</label>
+              <select
+                value={trip.rentalOption}
+                onChange={(e) => setTrip({ ...trip, rentalOption: e.target.value as RentalOption })}
+                className={field}
+              >
+                <option value="SELF_DRIVE">Self Drive</option>
+                <option value="WITH_DRIVER">
+                  With Driver (+{formatCurrency(driverFeePerDay)}/day)
+                </option>
+              </select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={label}>Pick-up</label>
+              <select
+                value={trip.pickupMethod}
+                onChange={(e) => setTrip({ ...trip, pickupMethod: e.target.value as BookingLocationMethod })}
+                className={field}
+              >
+                <option value="GARAGE">At our garage (free)</option>
+                <option value="DELIVERED">Delivered to me ({formatCurrency(deliveryFeeAmount)})</option>
+              </select>
+            </div>
+            <div>
+              <label className={label}>Drop-off</label>
+              <select
+                value={trip.dropoffMethod}
+                onChange={(e) => setTrip({ ...trip, dropoffMethod: e.target.value as BookingLocationMethod })}
+                className={field}
+              >
+                <option value="GARAGE">At our garage (free)</option>
+                <option value="DELIVERED">Different location ({formatCurrency(dropoffFeeAmount)})</option>
+              </select>
+            </div>
+          </div>
+
+          {trip.pickupMethod === "DELIVERED" && (
+            <div>
+              <label className={label}>Delivery Address</label>
+              <input
+                value={trip.pickupLocation}
+                onChange={(e) => setTrip({ ...trip, pickupLocation: e.target.value })}
+                placeholder="Where should we bring the car?"
+                className={field}
+              />
+            </div>
+          )}
+          {trip.dropoffMethod === "DELIVERED" && (
+            <div>
+              <label className={label}>Drop-off Address</label>
+              <input
+                value={trip.dropoffLocation}
+                onChange={(e) => setTrip({ ...trip, dropoffLocation: e.target.value })}
+                placeholder="Where will you leave the car?"
+                className={field}
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            {carwashFeeAmount > 0 && (
+              <label className="flex items-center gap-2 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  checked={trip.carwashRequested}
+                  onChange={(e) => setTrip({ ...trip, carwashRequested: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-400"
+                />
+                Add carwash ({formatCurrency(carwashFeeAmount)})
+              </label>
+            )}
+            {excessHourlyRate > 0 && (
+              <div>
+                <label className={label}>Anticipated excess hours</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  value={trip.excessHours}
+                  onChange={(e) => setTrip({ ...trip, excessHours: Math.max(0, Math.min(24, Number(e.target.value))) })}
+                  className={field}
+                />
+              </div>
+            )}
+          </div>
+
           {nights > 0 && (
-            <p className="text-sm text-slate-600">
-              {nights} night{nights === 1 ? "" : "s"} · {formatCurrency(subtotal)} total
-            </p>
+            <div className="rounded-lg bg-canvas p-3 text-sm text-ink-soft">
+              <div className="flex justify-between">
+                <span>
+                  Car rental ({nights} night{nights === 1 ? "" : "s"})
+                </span>
+                <span>{formatCurrency(pricing.carRentalFee)}</span>
+              </div>
+              {pricing.driverFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Driver fee</span>
+                  <span>{formatCurrency(pricing.driverFee)}</span>
+                </div>
+              )}
+              {pricing.deliveryFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Delivery fee</span>
+                  <span>{formatCurrency(pricing.deliveryFee)}</span>
+                </div>
+              )}
+              {pricing.dropoffFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Drop-off fee</span>
+                  <span>{formatCurrency(pricing.dropoffFee)}</span>
+                </div>
+              )}
+              {pricing.carwashFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Carwash</span>
+                  <span>{formatCurrency(pricing.carwashFee)}</span>
+                </div>
+              )}
+              {pricing.excessTimeFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Excess time ({trip.excessHours}h)</span>
+                  <span>{formatCurrency(pricing.excessTimeFee)}</span>
+                </div>
+              )}
+              <div className="mt-1 flex justify-between border-t border-line pt-1 font-semibold text-ink">
+                <span>Estimated total</span>
+                <span>{formatCurrency(pricing.totalAmount)}</span>
+              </div>
+            </div>
           )}
           {dateError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{dateError}</p>}
           <button
@@ -209,14 +453,119 @@ export function BookingWidget({
         </form>
       )}
 
+      {step === "trip" && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-ink">A couple more details</h3>
+          <p className="text-sm text-ink-soft">Helps us prepare for your trip — all optional.</p>
+          <div>
+            <label className={label}>Where are you headed? (optional)</label>
+            <input
+              value={trip.destinationDetails}
+              onChange={(e) => setTrip({ ...trip, destinationDetails: e.target.value })}
+              placeholder="e.g. Dahilayan, Bukidnon"
+              className={field}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={label}>Purpose of travel</label>
+              <select
+                value={trip.purposeOfTravel}
+                onChange={(e) => setTrip({ ...trip, purposeOfTravel: e.target.value })}
+                className={field}
+              >
+                <option value="">Select…</option>
+                {PURPOSE_OF_TRAVEL_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={label}>How did you find us?</label>
+              <select
+                value={trip.howFoundUs}
+                onChange={(e) => setTrip({ ...trip, howFoundUs: e.target.value })}
+                className={field}
+              >
+                <option value="">Select…</option>
+                {HOW_FOUND_US_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setStep("contact")}
+              className="rounded-lg border border-slate-300 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("choose")}
+              className="flex-1 rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white hover:bg-brand-dark"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+
       {step === "choose" && (
         <div className="space-y-5">
           <div>
             <h3 className="text-lg font-semibold text-ink">Reservation Summary</h3>
             <p className="mt-1 text-sm text-slate-600">
-              {startDate} → {endDate} · {nights} night{nights === 1 ? "" : "s"}
+              {startDate} {trip.startTime} → {endDate} {trip.endTime} · {nights} night{nights === 1 ? "" : "s"}
+              {trip.rentalOption === "WITH_DRIVER" ? " · With Driver" : ""}
             </p>
-            <p className="text-sm text-slate-600">Estimated total: {formatCurrency(subtotal)} (balance settled at pick-up)</p>
+            <div className="mt-2 rounded-lg bg-canvas p-3 text-sm text-ink-soft">
+              <div className="flex justify-between">
+                <span>Car rental</span>
+                <span>{formatCurrency(pricing.carRentalFee)}</span>
+              </div>
+              {pricing.driverFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Driver fee</span>
+                  <span>{formatCurrency(pricing.driverFee)}</span>
+                </div>
+              )}
+              {pricing.deliveryFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Delivery fee</span>
+                  <span>{formatCurrency(pricing.deliveryFee)}</span>
+                </div>
+              )}
+              {pricing.dropoffFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Drop-off fee</span>
+                  <span>{formatCurrency(pricing.dropoffFee)}</span>
+                </div>
+              )}
+              {pricing.carwashFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Carwash</span>
+                  <span>{formatCurrency(pricing.carwashFee)}</span>
+                </div>
+              )}
+              {pricing.excessTimeFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Excess time</span>
+                  <span>{formatCurrency(pricing.excessTimeFee)}</span>
+                </div>
+              )}
+              <div className="mt-1 flex justify-between border-t border-line pt-1 font-semibold text-ink">
+                <span>Estimated total</span>
+                <span>{formatCurrency(pricing.totalAmount)}</span>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-ink-soft">Balance settled at pick-up — only the amount below is charged now.</p>
           </div>
 
           <label className="flex items-start gap-2 text-xs text-slate-600">
@@ -236,8 +585,7 @@ export function BookingWidget({
             <p className="font-semibold text-ink">Pay {formatCurrency(reservationFeeAmount)} — Confirm Instantly</p>
             <p className="mt-1 text-xs text-slate-600">Your booking is locked in immediately, no waiting.</p>
             <form action={reservationFormAction} className="mt-3">
-              <input type="hidden" name="startDate" value={startDate} />
-              <input type="hidden" name="endDate" value={endDate} />
+              <TripHiddenFields startDate={startDate} endDate={endDate} trip={trip} />
               <button
                 type="submit"
                 disabled={!agreed || reservationPending}
@@ -258,8 +606,7 @@ export function BookingWidget({
               fee if you confirm in time.
             </p>
             <form action={holdFormAction} className="mt-3">
-              <input type="hidden" name="startDate" value={startDate} />
-              <input type="hidden" name="endDate" value={endDate} />
+              <TripHiddenFields startDate={startDate} endDate={endDate} trip={trip} />
               <button
                 type="submit"
                 disabled={!agreed || holdPending}
@@ -309,8 +656,7 @@ export function BookingWidget({
                 Accredited company? Book now with no payment — your company is billed separately.
               </p>
               <form action={corporateFormAction} className="mt-3 space-y-2">
-                <input type="hidden" name="startDate" value={startDate} />
-                <input type="hidden" name="endDate" value={endDate} />
+                <TripHiddenFields startDate={startDate} endDate={endDate} trip={trip} />
                 <select name="corporateClientId" required className={field} defaultValue="">
                   <option value="" disabled>
                     Select your company…
@@ -338,10 +684,10 @@ export function BookingWidget({
 
           <button
             type="button"
-            onClick={() => setStep(initialCustomer || contact ? "dates" : "contact")}
+            onClick={() => setStep("trip")}
             className="text-xs text-ink-soft hover:text-ink"
           >
-            ← Change dates or details
+            ← Change details
           </button>
         </div>
       )}

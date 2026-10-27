@@ -18,6 +18,12 @@ const PUBLIC_ORG_SELECT = {
   requirementsText: true,
   reservationFeeAmount: true,
   holdFeeAmount: true,
+  offersDriverService: true,
+  driverFeePerDay: true,
+  deliveryFeeAmount: true,
+  dropoffFeeAmount: true,
+  carwashFeeAmount: true,
+  excessHourlyRate: true,
 } as const;
 
 export type PublicOrg = NonNullable<
