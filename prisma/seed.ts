@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import bcrypt from "bcryptjs";
+import { DEFAULT_STAFF_PERMISSIONS } from "../src/lib/permissions";
 
 const adapter = new PrismaBetterSqlite3({
   url: (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
@@ -112,6 +113,20 @@ async function main() {
     },
   });
   console.log(`Created admin user: ${adminEmail}`);
+
+  const staffEmail = process.env.SEED_STAFF_EMAIL ?? "staff@example.com";
+  const staffPassword = process.env.SEED_STAFF_PASSWORD ?? "StaffPass123!";
+  await prisma.user.create({
+    data: {
+      organizationId: organization.id,
+      name: "Fleet Staff",
+      email: staffEmail,
+      passwordHash: await bcrypt.hash(staffPassword, 10),
+      role: "STAFF",
+      permissions: DEFAULT_STAFF_PERMISSIONS,
+    },
+  });
+  console.log(`Created staff user: ${staffEmail} (limited permissions — no dashboard, settings, or refunds access)`);
 
   const vehicles = [];
   for (const v of VEHICLES) {
