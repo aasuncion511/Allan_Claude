@@ -63,7 +63,7 @@ export default async function StorefrontSettingsPage() {
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
           Public Profile
         </h2>
-        <form action={updateStorefrontProfile} className="space-y-4">
+        <form action={updateStorefrontProfile} encType="multipart/form-data" className="space-y-4">
           <div>
             <label className={label}>Tagline</label>
             <input name="tagline" defaultValue={org.tagline ?? ""} className={field} placeholder="Travel Made Easy and Fun!" />
@@ -74,8 +74,32 @@ export default async function StorefrontSettingsPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={label}>Logo URL</label>
-              <input name="logoUrl" defaultValue={org.logoUrl ?? ""} className={field} placeholder="https://…" />
+              <label className={label}>Company Logo</label>
+              <p className="mb-2 text-xs text-ink-soft">
+                Shown on your storefront, the e-sign page, and the booking-confirmation e-invoice. PNG/JPG/WEBP/SVG, up to 1.5MB.
+              </p>
+              {org.logoUrl && (
+                <div className="mb-2 flex items-center gap-3 rounded-lg border border-line bg-canvas p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={org.logoUrl} alt="Current logo" className="h-10 w-auto" />
+                  <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+                    <input type="checkbox" name="removeLogo" />
+                    Remove logo
+                  </label>
+                </div>
+              )}
+              <input
+                name="logoFile"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className={field}
+              />
+              <input
+                name="logoUrlText"
+                defaultValue={org.logoUrl?.startsWith("data:") ? "" : (org.logoUrl ?? "")}
+                className={`${field} mt-2`}
+                placeholder="…or paste an image URL instead"
+              />
             </div>
             <div>
               <label className={label}>Hero Image URL (homepage banner)</label>
