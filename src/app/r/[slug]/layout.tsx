@@ -114,9 +114,22 @@ export default async function StorefrontLayout({
               </ul>
             </div>
           </div>
-          <p className="mt-8 text-xs text-ink-soft">
-            © {new Date().getFullYear()} {org.name}. All rights reserved.
-          </p>
+          <div className="mt-8 flex flex-col gap-2 text-xs text-ink-soft sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              Powered by:{" "}
+              <a
+                href="https://portfolio.promdipreneur.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-ink hover:underline"
+              >
+                https://portfolio.promdipreneur.com
+              </a>
+            </p>
+            <p>
+              © {new Date().getFullYear()} {org.name}. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
