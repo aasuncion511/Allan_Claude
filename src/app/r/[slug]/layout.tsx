@@ -123,7 +123,7 @@ export default async function StorefrontLayout({
                 rel="noopener noreferrer"
                 className="hover:text-ink hover:underline"
               >
-                https://portfolio.promdipreneur.com
+                Promdipreneur
               </a>
             </p>
             <p>
