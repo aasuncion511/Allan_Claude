@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/url";
 import { sendBookingConfirmationEmail } from "@/lib/booking-contract";
+import { requestRefund } from "@/lib/refunds";
+import type { RefundReason } from "@/lib/paymongo";
 
 type BookingStatus = "RESERVED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
@@ -131,6 +133,38 @@ export async function markSignedPhysically(bookingId: string, formData: FormData
     data: { signedAt: new Date(), signedName, signedMethod: "PHYSICAL", signedIp: null },
   });
   revalidatePath(`/bookings/${bookingId}/edit`);
+}
+
+const REFUND_REASONS: RefundReason[] = ["duplicate", "fraudulent", "requested_by_customer", "others"];
+
+export type RefundActionState = { error?: string; success?: boolean } | undefined;
+
+export async function requestBookingRefundAction(
+  bookingId: string,
+  _prevState: RefundActionState,
+  formData: FormData
+): Promise<RefundActionState> {
+  const user = await requirePermission("refunds");
+  const amount = Number(formData.get("amount"));
+  const reasonRaw = String(formData.get("paymongoReason") ?? "requested_by_customer");
+  const paymongoReason: RefundReason = REFUND_REASONS.includes(reasonRaw as RefundReason)
+    ? (reasonRaw as RefundReason)
+    : "others";
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  const result = await requestRefund({
+    organizationId: user.organizationId,
+    bookingId,
+    requestedByUserId: user.id,
+    amount,
+    paymongoReason,
+    notes,
+  });
+
+  if (!result.ok) return { error: result.error };
+  revalidatePath(`/bookings/${bookingId}/edit`);
+  revalidatePath("/bookings/refunds");
+  return { success: true };
 }
 
 export async function deleteBooking(bookingId: string) {

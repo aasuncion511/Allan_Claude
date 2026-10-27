@@ -66,10 +66,12 @@ npm run dev
 ```
 
 Open http://localhost:3000:
-- Staff: sign up a new company at `/signup`, or sign in with the seed admin
+- Owner: sign up a new company at `/signup`, or sign in with the seed owner
   (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` from `.env`)
+- Staff (limited permissions): sign in with the seed staff login
+  (`SEED_STAFF_EMAIL` / `SEED_STAFF_PASSWORD` from `.env`)
 - Renters: visit the seeded company's public site at
-  `/r/reyna-car-rentals` and sign up from there
+  `/r/yourcarrental-company` and sign up from there
 
 ### Environment variables
 
@@ -77,7 +79,8 @@ Open http://localhost:3000:
 | --- | --- |
 | `DATABASE_URL` | SQLite file path, e.g. `file:./dev.db` |
 | `SESSION_SECRET` | Signs both staff and renter session cookies. Generate with `openssl rand -hex 32` before production. |
-| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Login created by `npx prisma db seed`. Change the password after first login. |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Owner login created by `npx prisma db seed`. Change the password after first login. |
+| `SEED_STAFF_EMAIL` / `SEED_STAFF_PASSWORD` | Staff login (default permissions) created by `npx prisma db seed`. Change the password after first login. |
 | `TRIAL_DAYS` | Length of the free trial new signups get (default 14). |
 | `NEXT_PUBLIC_APP_URL` | Optional absolute base URL for Stripe/PayMongo redirect links; falls back to the request's Host header. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PRO` | This platform's own Stripe billing. Leave blank in development to skip. |

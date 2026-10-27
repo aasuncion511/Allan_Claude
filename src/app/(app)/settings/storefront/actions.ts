@@ -4,25 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
-
-const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
-const MAX_LOGO_BYTES = 1.5 * 1024 * 1024; // 1.5MB — stored inline as a data URI, keep it small
-
-/** Reads an uploaded image file into a data: URI, or null if absent/invalid/oversize. */
-async function readLogoUpload(formData: FormData): Promise<string | null> {
-  const file = formData.get("logoFile");
-  if (!(file instanceof File) || file.size === 0) return null;
-  if (!ALLOWED_LOGO_TYPES.includes(file.type) || file.size > MAX_LOGO_BYTES) return null;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  return `data:${file.type};base64,${buffer.toString("base64")}`;
-}
+import { readImageUpload } from "@/lib/image-upload";
 
 export async function updateStorefrontProfile(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
 
-  const uploadedLogo = await readLogoUpload(formData);
+  const uploadedLogo = await readImageUpload(formData, "logoFile");
   const removeLogo = formData.get("removeLogo") === "on";
   const pastedLogoUrl = field("logoUrlText");
   const logoUrl = removeLogo ? null : (uploadedLogo ?? pastedLogoUrl ?? undefined);
@@ -51,8 +40,6 @@ export async function updatePaymentSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
-  const reservationFeeAmount = Number(formData.get("reservationFeeAmount") ?? 500);
-  const holdFeeAmount = Number(formData.get("holdFeeAmount") ?? 350);
 
   await prisma.organization.update({
     where: { id: organizationId },
@@ -61,8 +48,29 @@ export async function updatePaymentSettings(formData: FormData) {
       paymongoPublicKey: field("paymongoPublicKey"),
       paymongoWebhookSecret: field("paymongoWebhookSecret"),
       paymongoLiveMode: formData.get("paymongoLiveMode") === "on",
-      reservationFeeAmount: Number.isFinite(reservationFeeAmount) ? reservationFeeAmount : 500,
-      holdFeeAmount: Number.isFinite(holdFeeAmount) ? holdFeeAmount : 350,
+    },
+  });
+
+  revalidatePath("/settings/storefront");
+}
+
+/** v2 free-hold + category reservation pricing — see src/lib/reservation-pricing.ts.
+ *  Centrally configured here, never a front-end constant. */
+export async function updateReservationPricing(formData: FormData) {
+  const { organizationId } = await requirePermission("storefrontSettings");
+
+  const positiveNumber = (name: string, fallback: number) => {
+    const value = Number(formData.get(name));
+    return Number.isFinite(value) && value >= 0 ? value : fallback;
+  };
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: {
+      holdWindowSeconds: Math.max(60, Math.round(positiveNumber("holdWindowSeconds", 1500))),
+      sedanReservationFee: positiveNumber("sedanReservationFee", 800),
+      suvReservationFee: positiveNumber("suvReservationFee", 1000),
+      pickupReservationFee: positiveNumber("pickupReservationFee", 1000),
     },
   });
 

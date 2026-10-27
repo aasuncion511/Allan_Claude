@@ -18,6 +18,16 @@ enum VehicleStatus {
   OUT_OF_SERVICE
 }
 
+/// Drives the category-specific non-refundable reservation fee (see
+/// Organization.sedan/suv/pickupReservationFee). Null = reservation pricing
+/// not configured yet for this unit — online reservation is blocked with a
+/// clear message rather than guessing a price.
+enum ReservationCategory {
+  SEDAN
+  SUV
+  PICKUP
+}
+
 enum BookingStatus {
   HOLD
   RESERVED
@@ -124,8 +134,16 @@ model Organization {
   paymongoPublicKey    String?
   paymongoWebhookSecret String?
   paymongoLiveMode     Boolean  @default(false)
-  reservationFeeAmount Float    @default(500)
-  holdFeeAmount        Float    @default(350)
+
+  // Free server-controlled hold, then a category-specific non-refundable
+  // reservation payment (credited toward the rental total). Replaces the
+  // old flat reservationFeeAmount/holdFeeAmount model — see
+  // src/lib/reservation-pricing.ts. Centrally configured, not a front-end
+  // constant, per the v2 handoff's "non-resetting timer" requirement.
+  holdWindowSeconds     Int   @default(1500)
+  sedanReservationFee   Float @default(800)
+  suvReservationFee     Float @default(1000)
+  pickupReservationFee  Float @default(1000)
 
   // Booking detail add-ons — configured once, applied automatically so
   // online payment stays instant/deterministic (no manual quoting).
@@ -162,6 +180,7 @@ model Organization {
   faqs             Faq[]
   testimonials     Testimonial[]
   smsLogs          SmsLog[]
+  refunds          Refund[]
 }
 
 model User {
@@ -190,6 +209,9 @@ model Vehicle {
   year          Int
   color         String?
   category      String?
+  /// Controls the online reservation fee (Sedan/SUV/Pickup) — distinct from
+  /// the free-text `category` display label above.
+  reservationCategory ReservationCategory?
   seats         Int?
   transmission  String?
   description   String?
@@ -259,6 +281,10 @@ model Booking {
   amountPaid       Float    @default(0)
   paymentStatus    PaymentStatus @default(UNPAID)
   paymongoCheckoutId String?
+  /// Stored so "Reserve Now" re-clicked during an already-active unpaid
+  /// checkout redirects to the SAME PayMongo session instead of creating a
+  /// duplicate (per the v2 handoff's reuse-not-duplicate requirement).
+  paymongoCheckoutUrl String?
   /// Set only while status = HOLD. The unit is blocked on the calendar until
   /// this time; if the hold isn't converted before it passes, it's released.
   holdExpiresAt    DateTime?
@@ -302,6 +328,22 @@ model Booking {
   pickupReminderSentAt  DateTime?
   returnReminderSentAt  DateTime?
 
+  // --- v2 free-hold + reservation-payment audit trail ---
+  /// Snapshot of the category reservation fee required to confirm this
+  /// hold, taken once at hold creation so a later admin price change never
+  /// retroactively changes an in-flight hold. Null for non-hold bookings
+  /// (staff-created, corporate, legacy pre-v2 rows).
+  reservationFeeDue     Float?
+  /// When a PayMongo checkout session was created for this hold (first
+  /// "Reserve Now" click) — distinct from paymentConfirmedAt per the
+  /// handoff's audit-trail requirement.
+  checkoutInitiatedAt   DateTime?
+  /// When the webhook verified payment and confirmed the booking.
+  paymentConfirmedAt    DateTime?
+  /// When PayMongo confirmed the checkout session was successfully
+  /// expired (vs. refused because payment was already paid/pending).
+  checkoutExpiredAt     DateTime?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -310,6 +352,7 @@ model Booking {
   customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   corporateClient  CorporateClient? @relation(fields: [corporateClientId], references: [id])
   charges          BookingCharge[]
+  refunds          Refund[]
 
   @@index([organizationId])
   @@index([vehicleId])
@@ -343,6 +386,36 @@ model BookingCharge {
   @@index([organizationId, status])
   @@index([bookingId])
   @@index([paymongoCheckoutId])
+}
+
+/// A refund against a paid booking — the admin "exception path" the v2
+/// handoff requires alongside the published non-refundable reservation
+/// policy (e.g. legally required, or the merchant can't supply the
+/// vehicle/service). Every refund needs a staff-written justification
+/// (`notes`), separate from PayMongo's own fixed `paymongoReason` enum, so
+/// there's a real audit trail for a policy exception.
+model Refund {
+  id             String   @id @default(cuid())
+  organizationId String
+  bookingId      String
+  amount         Float
+  /// PayMongo's fixed category: duplicate | fraudulent | requested_by_customer | others
+  paymongoReason String
+  notes          String
+  status         String   @default("PENDING") // PENDING | SUCCEEDED | FAILED
+  paymongoRefundId String?
+  error          String?
+  /// Loose reference (not a formal relation), matching
+  /// BookingCharge.recordedByUserId's existing convention.
+  requestedByUserId String
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([bookingId])
 }
 
 /// An accredited corporate client whose bookings skip online payment and

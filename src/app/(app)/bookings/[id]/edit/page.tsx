@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { PageHeader } from "@/components/page-header";
 import { BookingForm } from "@/components/booking-form";
 import { ChargeManager } from "../charge-manager";
+import { RefundPanel } from "../refund-panel";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { updateBooking, deleteBooking, resendConfirmationEmail, markSignedPhysically } from "../../actions";
 
@@ -13,14 +15,30 @@ export default async function EditBookingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { organizationId } = await requirePermission("bookings");
-  const [booking, vehicles, customers, charges] = await Promise.all([
+  const user = await requirePermission("bookings");
+  const { organizationId } = user;
+  const [booking, vehicles, customers, charges, refunds] = await Promise.all([
     prisma.booking.findFirst({ where: { id, organizationId }, include: { corporateClient: true, customer: true } }),
     prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),
     prisma.customer.findMany({ where: { organizationId }, orderBy: { name: "asc" } }),
     prisma.bookingCharge.findMany({ where: { bookingId: id, organizationId }, orderBy: { createdAt: "desc" } }),
+    prisma.refund.findMany({ where: { bookingId: id, organizationId }, orderBy: { createdAt: "desc" } }),
   ]);
   if (!booking) notFound();
+
+  const refunders = await prisma.user.findMany({
+    where: { id: { in: refunds.map((r) => r.requestedByUserId) } },
+    select: { id: true, name: true },
+  });
+  const refunderNameById = new Map(refunders.map((u) => [u.id, u.name]));
+  const refundsWithNames = refunds.map((r) => ({
+    ...r,
+    requestedByName: refunderNameById.get(r.requestedByUserId) ?? "—",
+  }));
+  const refundedSoFar = refunds
+    .filter((r) => r.status === "SUCCEEDED")
+    .reduce((sum, r) => sum + r.amount, 0);
+  const refundable = Math.max(0, booking.amountPaid - refundedSoFar);
 
   const balance = Math.max(0, booking.totalAmount - booking.amountPaid);
 
@@ -190,6 +208,15 @@ export default async function EditBookingPage({
       </div>
 
       <ChargeManager bookingId={booking.id} charges={charges} />
+
+      {booking.paymongoCheckoutId && (
+        <RefundPanel
+          bookingId={booking.id}
+          refundable={refundable}
+          refunds={refundsWithNames}
+          canRefund={hasPermission(user, "refunds")}
+        />
+      )}
     </div>
   );
 }

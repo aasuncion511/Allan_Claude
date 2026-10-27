@@ -6,6 +6,7 @@ export const PERMISSION_KEYS = [
   "expenses",
   "maintenance",
   "storefrontSettings",
+  "refunds",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -18,6 +19,7 @@ export const PERMISSION_LABELS: Record<PermissionKey, string> = {
   expenses: "Expenses",
   maintenance: "Maintenance",
   storefrontSettings: "Storefront & integrations",
+  refunds: "Refunds (policy exceptions)",
 };
 
 export type PermissionMap = Partial<Record<PermissionKey, boolean>>;
@@ -31,6 +33,7 @@ export const DEFAULT_STAFF_PERMISSIONS: PermissionMap = {
   expenses: false,
   maintenance: true,
   storefrontSettings: false,
+  refunds: false,
 };
 
 type PermissionedUser = {
@@ -52,6 +55,7 @@ const ROUTE_BY_PERMISSION: Record<PermissionKey, string> = {
   expenses: "/expenses",
   maintenance: "/maintenance",
   storefrontSettings: "/settings/storefront",
+  refunds: "/bookings/refunds",
 };
 
 /** Where to land a user right after login — the first module they can actually open. */

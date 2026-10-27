@@ -1,28 +1,17 @@
 import { prisma } from "@/lib/db";
 import { runSmsNurtureForOrg } from "@/lib/sms-nurture";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 /**
  * Daily entry point for automated SMS nurturing (pickup/return reminders,
  * birthday/holiday greetings, inactivity list cleanup) — see
  * src/lib/sms-nurture.ts. Call this once a day from an external scheduler
  * (e.g. a free cron-job.org task or a scheduled GitHub Action), since this
- * app has no built-in background job runner.
- *
- * Auth: set CRON_SECRET in the environment, then call with either
- *   Authorization: Bearer <CRON_SECRET>   (preferred)
- *   or  ?secret=<CRON_SECRET>             (for schedulers that can't set headers)
+ * app has no built-in background job runner. See src/lib/cron-auth.ts for
+ * how to authenticate the call.
  */
-function isAuthorized(req: Request): boolean {
-  const configured = process.env.CRON_SECRET;
-  if (!configured) return false;
-  const auth = req.headers.get("authorization");
-  if (auth === `Bearer ${configured}`) return true;
-  const url = new URL(req.url);
-  return url.searchParams.get("secret") === configured;
-}
-
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!isCronAuthorized(req)) {
     return new Response("Unauthorized", { status: 401 });
   }
 

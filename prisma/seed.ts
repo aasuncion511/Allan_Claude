@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import bcrypt from "bcryptjs";
+import { DEFAULT_STAFF_PERMISSIONS } from "../src/lib/permissions";
 
 const adapter = new PrismaBetterSqlite3({
   url: (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
@@ -9,14 +10,14 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter });
 
 const VEHICLES = [
-  { plateNumber: "NBW 1234", make: "Toyota", model: "Vios", year: 2023, color: "White", dailyRate: 2000, odometerStart: 8000, category: "Sedan", seats: 5, transmission: "Automatic", featured: true, description: "A fuel-efficient sedan, perfect for city drives and out-of-town trips alike.", photoUrl: "/vehicles/toyota-vios.png" },
-  { plateNumber: "NBW 5678", make: "Toyota", model: "Innova", year: 2022, color: "Silver", dailyRate: 3200, odometerStart: 21000, category: "Van", seats: 8, transmission: "Automatic", featured: true, description: "Spacious 8-seater, ideal for family outings and group travel.", photoUrl: "/vehicles/toyota-innova.png" },
-  { plateNumber: "NCP 2211", make: "Mitsubishi", model: "Xpander", year: 2023, color: "Red", dailyRate: 2800, odometerStart: 12500, category: "MPV", seats: 7, transmission: "Automatic", featured: true, description: "A stylish, comfortable MPV with room for the whole family.", photoUrl: "/vehicles/mitsubishi-xpander.png" },
-  { plateNumber: "NDR 4590", make: "Honda", model: "City", year: 2021, color: "Black", dailyRate: 2200, odometerStart: 35000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Reliable and economical — a great everyday sedan.", photoUrl: "/vehicles/honda-city.png" },
-  { plateNumber: "NEF 7788", make: "Toyota", model: "Hiace", year: 2020, color: "White", dailyRate: 5500, odometerStart: 62000, category: "Van", seats: 12, transmission: "Manual", featured: true, description: "Our biggest van — perfect for large groups, airport transfers, and tours.", photoUrl: "/vehicles/toyota-hiace.png" },
-  { plateNumber: "NGH 3345", make: "Nissan", model: "Almera", year: 2022, color: "Gray", dailyRate: 1900, odometerStart: 18000, category: "Sedan", seats: 5, transmission: "Automatic", featured: false, description: "Our most affordable daily driver, without compromising on comfort.", photoUrl: "/vehicles/nissan-almera.png" },
-  { plateNumber: "NLC 8800", make: "Toyota", model: "Land Cruiser (Bulletproof)", year: 2024, color: "Black", dailyRate: 25000, odometerStart: 3000, category: "Armored SUV", seats: 6, transmission: "Automatic", featured: true, description: "Factory-armored, ballistic-rated Land Cruiser for VIP transport and executive security details. Comes with a trained security driver on request.", photoUrl: "/vehicles/toyota-landcruiser-armored.png" },
-];
+  { plateNumber: "NBW 1234", make: "Toyota", model: "Vios", year: 2023, color: "White", dailyRate: 2000, odometerStart: 8000, category: "Sedan", reservationCategory: "SEDAN", seats: 5, transmission: "Automatic", featured: true, description: "A fuel-efficient sedan, perfect for city drives and out-of-town trips alike.", photoUrl: "/vehicles/toyota-vios.png" },
+  { plateNumber: "NBW 5678", make: "Toyota", model: "Innova", year: 2022, color: "Silver", dailyRate: 3200, odometerStart: 21000, category: "Van", reservationCategory: null, seats: 8, transmission: "Automatic", featured: true, description: "Spacious 8-seater, ideal for family outings and group travel.", photoUrl: "/vehicles/toyota-innova.png" },
+  { plateNumber: "NCP 2211", make: "Mitsubishi", model: "Xpander", year: 2023, color: "Red", dailyRate: 2800, odometerStart: 12500, category: "MPV", reservationCategory: null, seats: 7, transmission: "Automatic", featured: true, description: "A stylish, comfortable MPV with room for the whole family.", photoUrl: "/vehicles/mitsubishi-xpander.png" },
+  { plateNumber: "NDR 4590", make: "Honda", model: "City", year: 2021, color: "Black", dailyRate: 2200, odometerStart: 35000, category: "Sedan", reservationCategory: "SEDAN", seats: 5, transmission: "Automatic", featured: false, description: "Reliable and economical — a great everyday sedan.", photoUrl: "/vehicles/honda-city.png" },
+  { plateNumber: "NEF 7788", make: "Toyota", model: "Hiace", year: 2020, color: "White", dailyRate: 5500, odometerStart: 62000, category: "Van", reservationCategory: null, seats: 12, transmission: "Manual", featured: true, description: "Our biggest van — perfect for large groups, airport transfers, and tours.", photoUrl: "/vehicles/toyota-hiace.png" },
+  { plateNumber: "NGH 3345", make: "Nissan", model: "Almera", year: 2022, color: "Gray", dailyRate: 1900, odometerStart: 18000, category: "Sedan", reservationCategory: "SEDAN", seats: 5, transmission: "Automatic", featured: false, description: "Our most affordable daily driver, without compromising on comfort.", photoUrl: "/vehicles/nissan-almera.png" },
+  { plateNumber: "NLC 8800", make: "Toyota", model: "Land Cruiser (Bulletproof)", year: 2024, color: "Black", dailyRate: 25000, odometerStart: 3000, category: "Armored SUV", reservationCategory: "SUV", seats: 6, transmission: "Automatic", featured: true, description: "Factory-armored, ballistic-rated Land Cruiser for VIP transport and executive security details. Comes with a trained security driver on request.", photoUrl: "/vehicles/toyota-landcruiser-armored.png" },
+] as const;
 
 const CUSTOMERS = [
   { name: "Maria Santos", phone: "+63 917 100 2001", email: "maria.santos@example.com", driverLicense: "N01-23-456789" },
@@ -71,7 +72,7 @@ async function main() {
       slug: "yourcarrental-company",
       subscriptionStatus: "ACTIVE",
       tagline: "Travel Made Easy and Fun!",
-      heroImageUrl: "/vehicles/hero-fortuner.png",
+      heroImageUrl: "/vehicles/hero-fortuner-monastery.png",
       aboutText:
         "YourCarRental Company provides reliable and affordable cars for every trip — solo rides, family outings, and business travel. All our units are well-maintained and ready for the road.",
       contactPhone: "+63 917 123 4567",
@@ -81,7 +82,6 @@ async function main() {
       instagramUrl: "https://instagram.com/yourcarrental",
       requirementsText:
         "Two valid government IDs (including a driver's license) and proof of billing are required to complete a booking.",
-      reservationFeeAmount: 500,
       offersDriverService: true,
       driverFeePerDay: 800,
       deliveryFeeAmount: 300,
@@ -114,6 +114,20 @@ async function main() {
   });
   console.log(`Created admin user: ${adminEmail}`);
 
+  const staffEmail = process.env.SEED_STAFF_EMAIL ?? "staff@example.com";
+  const staffPassword = process.env.SEED_STAFF_PASSWORD ?? "StaffPass123!";
+  await prisma.user.create({
+    data: {
+      organizationId: organization.id,
+      name: "Fleet Staff",
+      email: staffEmail,
+      passwordHash: await bcrypt.hash(staffPassword, 10),
+      role: "STAFF",
+      permissions: DEFAULT_STAFF_PERMISSIONS,
+    },
+  });
+  console.log(`Created staff user: ${staffEmail} (limited permissions — no dashboard, settings, or refunds access)`);
+
   const vehicles = [];
   for (const v of VEHICLES) {
     const vehicle = await prisma.vehicle.create({
@@ -125,6 +139,7 @@ async function main() {
         year: v.year,
         color: v.color,
         category: v.category,
+        reservationCategory: v.reservationCategory,
         seats: v.seats,
         transmission: v.transmission,
         description: v.description,

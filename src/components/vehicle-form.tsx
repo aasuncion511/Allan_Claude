@@ -8,6 +8,12 @@ const STATUS_OPTIONS = [
 
 const CATEGORY_OPTIONS = ["Sedan", "SUV", "MPV", "Van", "Pickup", "Hatchback"];
 const TRANSMISSION_OPTIONS = ["Automatic", "Manual"];
+const RESERVATION_CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "Not set — online reservation unavailable" },
+  { value: "SEDAN", label: "Sedan" },
+  { value: "SUV", label: "SUV" },
+  { value: "PICKUP", label: "Pick-up" },
+];
 
 type VehicleDefaults = {
   plateNumber?: string;
@@ -16,6 +22,7 @@ type VehicleDefaults = {
   year?: number;
   color?: string | null;
   category?: string | null;
+  reservationCategory?: string | null;
   seats?: number | null;
   transmission?: string | null;
   description?: string | null;
@@ -41,7 +48,7 @@ export function VehicleForm({
   const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} encType="multipart/form-data" className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className={label}>Plate Number</label>
@@ -139,6 +146,23 @@ export function VehicleForm({
           </select>
         </div>
         <div>
+          <label className={label}>Reservation Pricing Category</label>
+          <select
+            name="reservationCategory"
+            defaultValue={defaults?.reservationCategory ?? ""}
+            className={field}
+          >
+            {RESERVATION_CATEGORY_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-ink-soft">
+            Drives the free-hold reservation fee — see Settings → Storefront.
+          </p>
+        </div>
+        <div>
           <label className={label}>Seats</label>
           <input
             name="seats"
@@ -176,12 +200,31 @@ export function VehicleForm({
         </div>
       </div>
       <div>
-        <label className={label}>Photo URL (optional)</label>
+        <label className={label}>Unit Photo</label>
+        <p className="mb-2 text-xs text-ink-soft">
+          Shown on the storefront fleet listing and this unit&apos;s detail page. PNG/JPG/WEBP/SVG, up to 1.5MB.
+        </p>
+        {defaults?.photoUrl && (
+          <div className="mb-2 flex items-center gap-3 rounded-lg border border-line bg-canvas p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={defaults.photoUrl} alt="Current unit photo" className="h-16 w-24 rounded object-cover" />
+            <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+              <input type="checkbox" name="removePhoto" />
+              Remove photo
+            </label>
+          </div>
+        )}
         <input
-          name="photoUrl"
-          defaultValue={defaults?.photoUrl ?? ""}
+          name="photoFile"
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
           className={field}
-          placeholder="https://…"
+        />
+        <input
+          name="photoUrlText"
+          defaultValue={defaults?.photoUrl?.startsWith("data:") ? "" : (defaults?.photoUrl ?? "")}
+          className={`${field} mt-2`}
+          placeholder="…or paste an image URL instead"
         />
       </div>
       <div>

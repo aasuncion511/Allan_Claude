@@ -4,9 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { readImageUpload } from "@/lib/image-upload";
 
-function parseVehicleForm(formData: FormData) {
+async function parseVehicleForm(formData: FormData) {
   const seatsRaw = String(formData.get("seats") ?? "").trim();
+  const uploadedPhoto = await readImageUpload(formData, "photoFile");
+  const removePhoto = formData.get("removePhoto") === "on";
+  const pastedPhotoUrl = String(formData.get("photoUrlText") ?? "").trim() || null;
+  const photoUrl = removePhoto ? null : (uploadedPhoto ?? pastedPhotoUrl ?? undefined);
+
   return {
     plateNumber: String(formData.get("plateNumber") ?? "").trim(),
     make: String(formData.get("make") ?? "").trim(),
@@ -14,10 +20,13 @@ function parseVehicleForm(formData: FormData) {
     year: Number(formData.get("year")),
     color: String(formData.get("color") ?? "").trim() || null,
     category: String(formData.get("category") ?? "").trim() || null,
+    reservationCategory: (["SEDAN", "SUV", "PICKUP"].includes(String(formData.get("reservationCategory")))
+      ? String(formData.get("reservationCategory"))
+      : null) as "SEDAN" | "SUV" | "PICKUP" | null,
     seats: seatsRaw ? Number(seatsRaw) : null,
     transmission: String(formData.get("transmission") ?? "").trim() || null,
     description: String(formData.get("description") ?? "").trim() || null,
-    photoUrl: String(formData.get("photoUrl") ?? "").trim() || null,
+    photoUrl,
     featured: formData.get("featured") === "on",
     dailyRate: Number(formData.get("dailyRate")),
     status: String(formData.get("status") ?? "AVAILABLE") as
@@ -33,18 +42,20 @@ function parseVehicleForm(formData: FormData) {
 
 export async function createVehicle(formData: FormData) {
   const { organizationId } = await requirePermission("fleet");
-  const data = parseVehicleForm(formData);
-  const vehicle = await prisma.vehicle.create({ data: { ...data, organizationId } });
+  const { photoUrl, ...data } = await parseVehicleForm(formData);
+  const vehicle = await prisma.vehicle.create({
+    data: { ...data, photoUrl: photoUrl ?? null, organizationId },
+  });
   revalidatePath("/fleet");
   redirect(`/fleet/${vehicle.id}`);
 }
 
 export async function updateVehicle(vehicleId: string, formData: FormData) {
   const { organizationId } = await requirePermission("fleet");
-  const data = parseVehicleForm(formData);
+  const { photoUrl, ...data } = await parseVehicleForm(formData);
   const result = await prisma.vehicle.updateMany({
     where: { id: vehicleId, organizationId },
-    data,
+    data: { ...data, ...(photoUrl !== undefined ? { photoUrl } : {}) },
   });
   if (result.count === 0) notFound();
   revalidatePath("/fleet");

@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format";
 import { StatusBadge } from "@/components/badge";
 import { AvailabilityCalendar } from "@/components/availability-calendar";
 import { BookingWidget } from "./booking-widget";
+import { getReservationFee, type ReservationCategory } from "@/lib/reservation-pricing";
 
 export default async function VehicleDetailPage({
   params,
@@ -32,6 +33,9 @@ export default async function VehicleDetailPage({
     customer && customer.organizationId === org.id
       ? { name: customer.name, email: customer.email ?? "", phone: customer.phone, address: customer.address ?? "" }
       : null;
+
+  const reservationCategory = vehicle.reservationCategory as ReservationCategory | null;
+  const reservationFee = getReservationFee(org, reservationCategory);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16">
@@ -78,10 +82,10 @@ export default async function VehicleDetailPage({
               <StatusBadge status={vehicle.status} />
             )}
           </div>
-          {org.reservationFeeAmount > 0 && (
+          {reservationFee != null && (
             <p className="mt-3 text-xs text-ink-soft">
-              A {formatCurrency(org.reservationFeeAmount)} reservation fee
-              confirms your booking instantly online.
+              Hold this car FREE for {Math.round(org.holdWindowSeconds / 60)} minutes, no payment required — then a{" "}
+              {formatCurrency(reservationFee)} reservation fee confirms your booking, credited toward your rental.
             </p>
           )}
         </div>
@@ -97,8 +101,8 @@ export default async function VehicleDetailPage({
             slug={slug}
             vehicleId={vehicle.id}
             dailyRate={vehicle.dailyRate}
-            reservationFeeAmount={org.reservationFeeAmount}
-            holdFeeAmount={org.holdFeeAmount}
+            reservationFee={reservationFee}
+            holdWindowSeconds={org.holdWindowSeconds}
             contactPhone={org.contactPhone}
             requirementsText={org.requirementsText}
             initialCustomer={initialCustomer}

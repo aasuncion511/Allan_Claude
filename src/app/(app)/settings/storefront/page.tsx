@@ -6,6 +6,7 @@ import { DEFAULT_TERMS_AND_CONDITIONS } from "@/lib/booking-contract";
 import {
   updateStorefrontProfile,
   updatePaymentSettings,
+  updateReservationPricing,
   updateBookingAddOns,
   updateGhlSettings,
   updateSmsNurtureSettings,
@@ -195,43 +196,84 @@ export default async function StorefrontSettingsPage() {
               placeholder="whsk_…"
             />
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className={label}>Reservation Fee (₱)</label>
-              <input
-                name="reservationFeeAmount"
-                type="number"
-                step="0.01"
-                defaultValue={org.reservationFeeAmount}
-                className={field}
-              />
-              <p className="mt-1 text-xs text-ink-soft">Confirms a booking instantly.</p>
-            </div>
-            <div>
-              <label className={label}>2-Hour Hold Fee (₱)</label>
-              <input
-                name="holdFeeAmount"
-                type="number"
-                step="0.01"
-                defaultValue={org.holdFeeAmount}
-                className={field}
-              />
-              <p className="mt-1 text-xs text-ink-soft">
-                Non-refundable, credited toward the reservation fee if confirmed in time.
-              </p>
-            </div>
-            <label className="mt-6 flex items-center gap-2 text-sm text-ink">
-              <input
-                name="paymongoLiveMode"
-                type="checkbox"
-                defaultChecked={org.paymongoLiveMode}
-                className="h-4 w-4 rounded border-line bg-surface"
-              />
-              Live mode (real money)
-            </label>
-          </div>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              name="paymongoLiveMode"
+              type="checkbox"
+              defaultChecked={org.paymongoLiveMode}
+              className="h-4 w-4 rounded border-line bg-surface"
+            />
+            Live mode (real money)
+          </label>
           <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save Payment Settings
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+          Free Hold &amp; Reservation Pricing
+        </h2>
+        <p className="mb-4 text-xs text-ink-soft">
+          Renters get a FREE, server-controlled hold on the vehicle (no payment), then pay a non-refundable
+          category-specific reservation fee — credited toward the rental total — to confirm. Assign each vehicle a
+          category under Fleet → Edit; a vehicle with no category assigned can&apos;t be reserved online yet.
+        </p>
+        <p className="mb-4 text-xs text-ink-soft">
+          Also requires a second scheduler task hitting{" "}
+          <code className="rounded bg-canvas px-1 py-0.5 font-mono">{baseUrl}/api/cron/hold-expiry</code> every 1–2
+          minutes (same auth as the SMS scheduler below) — it&apos;s what actually releases expired holds and
+          resolves payments stuck mid-flight. Without it, expired holds still won&apos;t block new attempts (the app
+          checks this live too), but PayMongo checkout sessions never get explicitly closed.
+        </p>
+        <form action={updateReservationPricing} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+              <label className={label}>Sedan Fee (₱)</label>
+              <input
+                name="sedanReservationFee"
+                type="number"
+                step="0.01"
+                defaultValue={org.sedanReservationFee}
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>SUV Fee (₱)</label>
+              <input
+                name="suvReservationFee"
+                type="number"
+                step="0.01"
+                defaultValue={org.suvReservationFee}
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>Pick-up Fee (₱)</label>
+              <input
+                name="pickupReservationFee"
+                type="number"
+                step="0.01"
+                defaultValue={org.pickupReservationFee}
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>Free Hold Window (seconds)</label>
+              <input
+                name="holdWindowSeconds"
+                type="number"
+                min={60}
+                step="1"
+                defaultValue={org.holdWindowSeconds}
+                className={field}
+              />
+              <p className="mt-1 text-xs text-ink-soft">1,500 = 25 minutes.</p>
+            </div>
+          </div>
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
+            Save Reservation Pricing
           </button>
         </form>
       </section>
