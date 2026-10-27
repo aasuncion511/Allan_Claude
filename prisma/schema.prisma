@@ -180,6 +180,7 @@ model Organization {
   faqs             Faq[]
   testimonials     Testimonial[]
   smsLogs          SmsLog[]
+  refunds          Refund[]
 }
 
 model User {
@@ -351,6 +352,7 @@ model Booking {
   customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   corporateClient  CorporateClient? @relation(fields: [corporateClientId], references: [id])
   charges          BookingCharge[]
+  refunds          Refund[]
 
   @@index([organizationId])
   @@index([vehicleId])
@@ -384,6 +386,36 @@ model BookingCharge {
   @@index([organizationId, status])
   @@index([bookingId])
   @@index([paymongoCheckoutId])
+}
+
+/// A refund against a paid booking — the admin "exception path" the v2
+/// handoff requires alongside the published non-refundable reservation
+/// policy (e.g. legally required, or the merchant can't supply the
+/// vehicle/service). Every refund needs a staff-written justification
+/// (`notes`), separate from PayMongo's own fixed `paymongoReason` enum, so
+/// there's a real audit trail for a policy exception.
+model Refund {
+  id             String   @id @default(cuid())
+  organizationId String
+  bookingId      String
+  amount         Float
+  /// PayMongo's fixed category: duplicate | fraudulent | requested_by_customer | others
+  paymongoReason String
+  notes          String
+  status         String   @default("PENDING") // PENDING | SUCCEEDED | FAILED
+  paymongoRefundId String?
+  error          String?
+  /// Loose reference (not a formal relation), matching
+  /// BookingCharge.recordedByUserId's existing convention.
+  requestedByUserId String
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([bookingId])
 }
 
 /// An accredited corporate client whose bookings skip online payment and

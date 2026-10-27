@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { updateInquiryStatus } from "./actions";
 
 export default async function BookingsPage() {
-  const { organizationId } = await requirePermission("bookings");
+  const user = await requirePermission("bookings");
+  const { organizationId } = user;
   const bookings = await prisma.booking.findMany({
     where: { organizationId },
     include: { vehicle: true, customer: true, corporateClient: true },
@@ -25,12 +27,22 @@ export default async function BookingsPage() {
         title="Bookings"
         description={`${bookings.length} booking${bookings.length === 1 ? "" : "s"} — unit schedule at a glance`}
         actions={
-          <Link
-            href="/bookings/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
-          >
-            + New Booking
-          </Link>
+          <div className="flex gap-2">
+            {hasPermission(user, "refunds") && (
+              <Link
+                href="/bookings/refunds"
+                className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas"
+              >
+                Refund Log
+              </Link>
+            )}
+            <Link
+              href="/bookings/new"
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+            >
+              + New Booking
+            </Link>
+          </div>
         }
       />
 

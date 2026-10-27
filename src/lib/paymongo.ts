@@ -193,3 +193,49 @@ export async function verifyWebhookSignature(
 export function pesosToCentavos(pesos: number): number {
   return Math.round(pesos * 100);
 }
+
+export type RefundReason = "duplicate" | "fraudulent" | "requested_by_customer" | "others";
+
+export type RefundResult = {
+  id: string;
+  status: string;
+};
+
+/**
+ * Issues a refund against a specific payment (not a checkout session —
+ * PayMongo refunds are created against the underlying payment id, which
+ * getCheckoutSession resolves). Used only by the admin refund-exception
+ * workflow (src/lib/refunds.ts) — the published reservation policy is
+ * non-refundable by default; this is the deliberate override path.
+ * See https://developers.paymongo.com/reference/the-refund-object
+ */
+export async function createRefund(
+  secretKey: string,
+  params: { paymentId: string; amountCentavos: number; reason: RefundReason; notes?: string }
+): Promise<RefundResult> {
+  const res = await fetch(`${PAYMONGO_API}/refunds`, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader(secretKey),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      data: {
+        attributes: {
+          amount: params.amountCentavos,
+          payment_id: params.paymentId,
+          reason: params.reason,
+          notes: params.notes,
+        },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`PayMongo refund failed (${res.status}): ${body}`);
+  }
+
+  const json = await res.json();
+  return { id: json.data.id, status: json.data.attributes.status };
+}
