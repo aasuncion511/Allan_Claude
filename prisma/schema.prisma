@@ -106,6 +106,9 @@ model Organization {
   instagramUrl         String?
   tiktokUrl            String?
   requirementsText     String?
+  /// Full contract body shown in the payment-confirmation email and the
+  /// e-sign page. Falls back to DEFAULT_TERMS_AND_CONDITIONS when unset.
+  termsAndConditionsText String?
 
   // Stripe billing (organization's subscription to this SaaS)
   stripeCustomerId     String?  @unique
@@ -262,6 +265,20 @@ model Booking {
   carwashFee       Float    @default(0)
   excessTimeFee    Float    @default(0)
   notes            String?
+
+  /// Random token for the public e-sign link mailed to the client; generated
+  /// on demand the first time a confirmation email is sent.
+  signatureToken   String?  @unique
+  signedAt         DateTime?
+  signedName       String?
+  /// "ONLINE" (clicked the e-sign link) or "PHYSICAL" (staff recorded a
+  /// signed printout at pickup).
+  signedMethod     String?
+  signedIp         String?
+
+  confirmationEmailSentAt DateTime?
+  confirmationEmailError  String?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

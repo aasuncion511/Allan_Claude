@@ -4,8 +4,8 @@ import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { BookingForm } from "@/components/booking-form";
 import { ChargeManager } from "../charge-manager";
-import { formatCurrency } from "@/lib/format";
-import { updateBooking, deleteBooking } from "../../actions";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { updateBooking, deleteBooking, resendConfirmationEmail, markSignedPhysically } from "../../actions";
 
 export default async function EditBookingPage({
   params,
@@ -15,7 +15,7 @@ export default async function EditBookingPage({
   const { id } = await params;
   const { organizationId } = await requirePermission("bookings");
   const [booking, vehicles, customers, charges] = await Promise.all([
-    prisma.booking.findFirst({ where: { id, organizationId }, include: { corporateClient: true } }),
+    prisma.booking.findFirst({ where: { id, organizationId }, include: { corporateClient: true, customer: true } }),
     prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),
     prisma.customer.findMany({ where: { organizationId }, orderBy: { name: "asc" } }),
     prisma.bookingCharge.findMany({ where: { bookingId: id, organizationId }, orderBy: { createdAt: "desc" } }),
@@ -26,6 +26,8 @@ export default async function EditBookingPage({
 
   const action = updateBooking.bind(null, booking.id);
   const remove = deleteBooking.bind(null, booking.id);
+  const resendEmail = resendConfirmationEmail.bind(null, booking.id);
+  const markSigned = markSignedPhysically.bind(null, booking.id);
 
   return (
     <div className="max-w-2xl">
@@ -54,6 +56,60 @@ export default async function EditBookingPage({
           </div>
         )
       )}
+
+      <div className="mb-6 rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+          Contract &amp; Confirmation Email
+        </h2>
+
+        <div className="mb-4 text-sm">
+          {booking.confirmationEmailSentAt ? (
+            <p className="text-success-text">
+              ✅ Confirmation email (T&amp;Cs + e-invoice) sent on {formatDate(booking.confirmationEmailSentAt)}.
+            </p>
+          ) : booking.confirmationEmailError ? (
+            <p className="text-danger-text">⚠ Email failed: {booking.confirmationEmailError}</p>
+          ) : (
+            <p className="text-ink-soft">No confirmation email sent yet.</p>
+          )}
+          <form action={resendEmail} className="mt-2">
+            <button
+              type="submit"
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
+            >
+              {booking.confirmationEmailSentAt ? "Resend" : "Send"} Confirmation Email
+            </button>
+          </form>
+        </div>
+
+        <div className="border-t border-line pt-4 text-sm">
+          {booking.signedAt ? (
+            <p className="text-success-text">
+              ✅ Signed by <strong>{booking.signedName}</strong> on {formatDate(booking.signedAt)} (
+              {booking.signedMethod === "PHYSICAL" ? "physical copy at pickup" : "electronically"}).
+            </p>
+          ) : (
+            <>
+              <p className="mb-2 text-ink-soft">⚠ Not yet signed.</p>
+              <form action={markSigned} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  name="signedName"
+                  placeholder="Full name on the printout"
+                  defaultValue={booking.customer?.name}
+                  className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
+                >
+                  Mark as Signed Physically
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
 
       {booking.source === "ONLINE" && (
         <div className="mb-6 rounded-xl border border-line bg-surface p-6">

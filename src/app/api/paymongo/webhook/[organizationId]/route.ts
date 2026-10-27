@@ -3,6 +3,7 @@ import { verifyWebhookSignature } from "@/lib/paymongo";
 import { isVehicleAvailable } from "@/lib/availability";
 import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
 import { HOLD_WINDOW_MS } from "@/lib/hold";
+import { sendBookingConfirmationEmail } from "@/lib/booking-contract";
 
 /**
  * Per-organization PayMongo webhook endpoint. Each org registers its own
@@ -57,7 +58,10 @@ export async function POST(
     if (kind === "convert") {
       await handleConvert(org.id, checkoutId, metadata);
     } else {
-      await handleNewBooking(org, checkoutId, kind, metadata);
+      const proto = req.headers.get("x-forwarded-proto") ?? "https";
+      const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+      await handleNewBooking(org, checkoutId, kind, metadata, baseUrl);
     }
   }
 
@@ -68,7 +72,8 @@ async function handleNewBooking(
   org: { id: string; reservationFeeAmount: number; holdFeeAmount: number; ghlLocationId: string | null; ghlApiToken: string | null },
   checkoutId: string,
   kind: "reservation" | "hold",
-  metadata: Record<string, string>
+  metadata: Record<string, string>,
+  baseUrl: string
 ) {
   const {
     vehicleId,
@@ -112,7 +117,7 @@ async function handleNewBooking(
   const now = new Date();
   const isHold = kind === "hold";
 
-  await prisma.booking.create({
+  const booking = await prisma.booking.create({
     data: {
       organizationId: org.id,
       vehicleId,
@@ -173,6 +178,15 @@ async function handleNewBooking(
         }
       );
     }
+  }
+
+  // Best-effort — a verified payment just landed, so mail the client their
+  // T&Cs, e-sign link, and itemized e-invoice. Never blocks the webhook.
+  try {
+    await sendBookingConfirmationEmail(booking.id, baseUrl);
+  } catch {
+    // Already logged/persisted inside sendBookingConfirmationEmail's own
+    // try/catch paths; this outer guard is just extra safety.
   }
 }
 

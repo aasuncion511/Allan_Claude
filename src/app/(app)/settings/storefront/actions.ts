@@ -75,6 +75,21 @@ export async function updateBookingAddOns(formData: FormData) {
   revalidatePath("/settings/storefront");
 }
 
+export async function updateLegalSettings(formData: FormData) {
+  const { organizationId } = await requirePermission("storefrontSettings");
+
+  const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: {
+      termsAndConditionsText: field("termsAndConditionsText"),
+    },
+  });
+
+  revalidatePath("/settings/storefront");
+}
+
 export async function updateGhlSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 

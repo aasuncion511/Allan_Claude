@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/url";
+import { sendBookingConfirmationEmail } from "@/lib/booking-contract";
 
 type BookingStatus = "RESERVED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
@@ -107,6 +109,28 @@ export async function updateInquiryStatus(inquiryId: string, status: "CONTACTED"
   if (!existing) notFound();
   await prisma.bookingInquiry.update({ where: { id: inquiryId }, data: { status } });
   revalidatePath("/bookings");
+}
+
+export async function resendConfirmationEmail(bookingId: string) {
+  const { organizationId } = await requirePermission("bookings");
+  const booking = await prisma.booking.findFirst({ where: { id: bookingId, organizationId } });
+  if (!booking) notFound();
+  const baseUrl = await getBaseUrl();
+  await sendBookingConfirmationEmail(booking.id, baseUrl);
+  revalidatePath(`/bookings/${bookingId}/edit`);
+}
+
+export async function markSignedPhysically(bookingId: string, formData: FormData) {
+  const { organizationId } = await requirePermission("bookings");
+  const booking = await prisma.booking.findFirst({ where: { id: bookingId, organizationId } });
+  if (!booking) notFound();
+  const signedName = String(formData.get("signedName") ?? "").trim();
+  if (!signedName) return;
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: { signedAt: new Date(), signedName, signedMethod: "PHYSICAL", signedIp: null },
+  });
+  revalidatePath(`/bookings/${bookingId}/edit`);
 }
 
 export async function deleteBooking(bookingId: string) {

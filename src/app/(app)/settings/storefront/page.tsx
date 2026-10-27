@@ -2,11 +2,13 @@ import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { getBaseUrl } from "@/lib/url";
+import { DEFAULT_TERMS_AND_CONDITIONS } from "@/lib/booking-contract";
 import {
   updateStorefrontProfile,
   updatePaymentSettings,
   updateBookingAddOns,
   updateGhlSettings,
+  updateLegalSettings,
   createFaq,
   deleteFaq,
   createTestimonial,
@@ -265,9 +267,12 @@ export default async function StorefrontSettingsPage() {
         </h2>
         <p className="mb-4 text-xs text-ink-soft">
           Connect your existing GHL sub-account to automatically sync new
-          customers and bookings as contacts. In GHL: Settings → Business
-          Profile for your Location ID, and Settings → Private Integrations
-          for an API token.
+          customers and bookings as contacts, and to send the automated
+          payment-confirmation email (Terms &amp; Conditions, e-sign link,
+          e-invoice) below. In GHL: Settings → Business Profile for your
+          Location ID, and Settings → Private Integrations for an API token
+          — make sure the token includes the <strong>Conversations</strong>{" "}
+          scope so it&apos;s allowed to send emails, not just sync contacts.
         </p>
         <form action={updateGhlSettings} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -287,6 +292,33 @@ export default async function StorefrontSettingsPage() {
           </div>
           <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save CRM Settings
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+          Terms &amp; Conditions
+        </h2>
+        <p className="mb-4 text-xs text-ink-soft">
+          Included in the automated payment-confirmation email and shown on
+          the client&apos;s e-sign page. Leave blank to use a sensible generic
+          default until you customize it — edit it to match your actual
+          rental contract.
+        </p>
+        <form action={updateLegalSettings} className="space-y-4">
+          <div>
+            <label className={label}>Terms &amp; Conditions text</label>
+            <textarea
+              name="termsAndConditionsText"
+              rows={12}
+              defaultValue={org.termsAndConditionsText ?? ""}
+              placeholder={DEFAULT_TERMS_AND_CONDITIONS}
+              className={field}
+            />
+          </div>
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
+            Save Terms &amp; Conditions
           </button>
         </form>
       </section>
