@@ -140,6 +140,15 @@ model Organization {
   ghlLocationId        String?
   ghlApiToken          String?
 
+  // Automated SMS nurturing (reminders + holiday/birthday greetings), sent
+  // via the GHL connection above. See src/lib/sms-nurture.ts.
+  smsRemindersEnabled         Boolean @default(false)
+  smsBirthdayGreetingsEnabled Boolean @default(false)
+  smsHolidayGreetingsEnabled  Boolean @default(false)
+  /// Customers with no booking activity for this many months are
+  /// automatically removed from nurture SMS (smsOptOut set to true).
+  smsInactivityMonths         Int     @default(24)
+
   users            User[]
   vehicles         Vehicle[]
   customers        Customer[]
@@ -152,6 +161,7 @@ model Organization {
   fuelLogs         FuelLog[]
   faqs             Faq[]
   testimonials     Testimonial[]
+  smsLogs          SmsLog[]
 }
 
 model User {
@@ -212,6 +222,13 @@ model Customer {
   address        String?
   driverLicense  String?
   notes          String?
+  /// Captured from the customer's driver's license at the counter — powers
+  /// automated birthday SMS greetings. Not collected on public self-signup.
+  birthday       DateTime?
+  /// True once removed from automated SMS nurturing — manually by staff, or
+  /// automatically after organization.smsInactivityMonths of no bookings.
+  smsOptOut       Boolean  @default(false)
+  smsOptOutReason String?
   /// Set only when this customer self-registered on the public storefront.
   passwordHash   String?
   createdAt      DateTime @default(now())
@@ -220,6 +237,7 @@ model Customer {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   bookings       Booking[]
   bookingInquiries BookingInquiry[]
+  smsLogs        SmsLog[]
 
   @@unique([organizationId, email])
   @@index([organizationId, name])
@@ -278,6 +296,11 @@ model Booking {
 
   confirmationEmailSentAt DateTime?
   confirmationEmailError  String?
+
+  /// Set once the automated day-before pickup/return SMS reminder is sent,
+  /// so the daily cron never double-sends. See src/lib/sms-nurture.ts.
+  pickupReminderSentAt  DateTime?
+  returnReminderSentAt  DateTime?
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -452,4 +475,28 @@ model Testimonial {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+
+/// Audit trail + idempotency guard for every automated nurture SMS (and a
+/// place to see send history). The unique constraint is what stops the
+/// daily cron from double-sending the same birthday/holiday greeting to the
+/// same customer if it's ever triggered twice in one day.
+model SmsLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  customerId     String?
+  /// "PICKUP_REMINDER" | "RETURN_REMINDER" | "BIRTHDAY" | "HOLIDAY"
+  kind           String
+  /// e.g. "pickup:<bookingId>", "birthday:2026", "holiday:2026-12-25"
+  dedupeKey      String
+  message        String
+  status         String
+  error          String?
+  sentAt         DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer     Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, customerId, dedupeKey])
+  @@index([organizationId, kind])
 }

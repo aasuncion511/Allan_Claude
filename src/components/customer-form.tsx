@@ -4,6 +4,7 @@ type CustomerDefaults = {
   phone?: string;
   address?: string | null;
   driverLicense?: string | null;
+  birthday?: Date | string | null;
   notes?: string | null;
 };
 
@@ -60,6 +61,20 @@ export function CustomerForm({
             defaultValue={defaults?.driverLicense ?? ""}
             className={field}
           />
+        </div>
+        <div>
+          <label className={label}>Birthday</label>
+          <input
+            name="birthday"
+            type="date"
+            defaultValue={
+              defaults?.birthday
+                ? new Date(defaults.birthday).toISOString().slice(0, 10)
+                : ""
+            }
+            className={field}
+          />
+          <p className="mt-1 text-xs text-ink-soft">From their driver&rsquo;s license — powers automated birthday SMS greetings.</p>
         </div>
       </div>
       <div>

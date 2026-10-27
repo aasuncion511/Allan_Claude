@@ -6,12 +6,14 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 
 function parseCustomerForm(formData: FormData) {
+  const birthdayRaw = String(formData.get("birthday") ?? "").trim();
   return {
     name: String(formData.get("name") ?? "").trim(),
     email: String(formData.get("email") ?? "").trim() || null,
     phone: String(formData.get("phone") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim() || null,
     driverLicense: String(formData.get("driverLicense") ?? "").trim() || null,
+    birthday: birthdayRaw ? new Date(birthdayRaw) : null,
     notes: String(formData.get("notes") ?? "").trim() || null,
   };
 }
@@ -35,6 +37,18 @@ export async function updateCustomer(customerId: string, formData: FormData) {
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}`);
+}
+
+export async function toggleCustomerSmsOptOut(customerId: string, nextOptOut: boolean) {
+  const { organizationId } = await requirePermission("customers");
+  await prisma.customer.updateMany({
+    where: { id: customerId, organizationId },
+    data: {
+      smsOptOut: nextOptOut,
+      smsOptOutReason: nextOptOut ? "Manually opted out by staff" : null,
+    },
+  });
+  revalidatePath(`/customers/${customerId}`);
 }
 
 export async function deleteCustomer(customerId: string) {

@@ -86,6 +86,39 @@ export async function sendGhlEmail(
   }
 }
 
+/**
+ * Sends a one-off SMS to a GHL contact through the organization's own
+ * location (same Conversations API as sendGhlEmail). Used for automated
+ * pickup/return reminders and birthday/holiday nurture texts.
+ */
+export async function sendGhlSms(
+  config: GhlConfig,
+  message: { contactId: string; message: string }
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`${GHL_API}/conversations/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiToken}`,
+        Version: GHL_VERSION,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "SMS",
+        contactId: message.contactId,
+        message: message.message,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return { ok: false, error: `GHL responded ${res.status}: ${body.slice(0, 300)}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown error sending SMS" };
+  }
+}
+
 export function isGhlConfigured(org: { ghlLocationId: string | null; ghlApiToken: string | null }): boolean {
   return Boolean(org.ghlLocationId && org.ghlApiToken);
 }

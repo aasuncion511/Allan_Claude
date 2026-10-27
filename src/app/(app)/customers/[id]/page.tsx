@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { toggleCustomerSmsOptOut } from "../actions";
 
 export default async function CustomerDetailPage({
   params,
@@ -61,6 +62,14 @@ export default async function CustomerDetailPage({
         </div>
         <div>
           <p className="text-xs uppercase tracking-wide text-ink-soft">
+            Birthday
+          </p>
+          <p className="text-sm text-ink">
+            {customer.birthday ? formatDate(customer.birthday) : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-ink-soft">
             Total Bookings
           </p>
           <p className="text-sm text-ink">{customer.bookings.length}</p>
@@ -89,6 +98,26 @@ export default async function CustomerDetailPage({
             <p className="text-sm text-ink">{customer.notes}</p>
           </div>
         )}
+        <div className="col-span-2 sm:col-span-4 flex items-center justify-between border-t border-line pt-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-soft">SMS Nurturing</p>
+            <p className="text-sm text-ink">
+              {customer.smsOptOut ? (
+                <>⚠ Not receiving reminders/greetings{customer.smsOptOutReason ? ` — ${customer.smsOptOutReason}` : ""}</>
+              ) : (
+                "✅ Receiving reminders & greetings"
+              )}
+            </p>
+          </div>
+          <form action={toggleCustomerSmsOptOut.bind(null, customer.id, !customer.smsOptOut)}>
+            <button
+              type="submit"
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
+            >
+              {customer.smsOptOut ? "Re-enable SMS" : "Opt Out of SMS"}
+            </button>
+          </form>
+        </div>
       </div>
 
       <h2 className="mb-3 text-lg font-semibold text-ink">

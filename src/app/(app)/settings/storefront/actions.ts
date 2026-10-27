@@ -107,6 +107,24 @@ export async function updateLegalSettings(formData: FormData) {
   revalidatePath("/settings/storefront");
 }
 
+export async function updateSmsNurtureSettings(formData: FormData) {
+  const { organizationId } = await requirePermission("storefrontSettings");
+
+  const months = Number(formData.get("smsInactivityMonths") ?? 24);
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: {
+      smsRemindersEnabled: formData.get("smsRemindersEnabled") === "on",
+      smsBirthdayGreetingsEnabled: formData.get("smsBirthdayGreetingsEnabled") === "on",
+      smsHolidayGreetingsEnabled: formData.get("smsHolidayGreetingsEnabled") === "on",
+      smsInactivityMonths: Number.isFinite(months) && months > 0 ? Math.round(months) : 24,
+    },
+  });
+
+  revalidatePath("/settings/storefront");
+}
+
 export async function updateGhlSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 

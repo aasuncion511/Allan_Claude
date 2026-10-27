@@ -8,6 +8,7 @@ import {
   updatePaymentSettings,
   updateBookingAddOns,
   updateGhlSettings,
+  updateSmsNurtureSettings,
   updateLegalSettings,
   createFaq,
   deleteFaq,
@@ -316,6 +317,59 @@ export default async function StorefrontSettingsPage() {
           </div>
           <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save CRM Settings
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+          SMS Nurturing
+        </h2>
+        <p className="mb-4 text-xs text-ink-soft">
+          Sent via your GHL connection above (same Conversations scope as the confirmation email). Requires an
+          external scheduler to hit this URL once a day — a free option like{" "}
+          <a href="https://cron-job.org" target="_blank" rel="noreferrer" className="text-brand hover:underline">
+            cron-job.org
+          </a>{" "}
+          works well:
+        </p>
+        <code className="mb-4 block overflow-x-auto rounded-lg border border-line bg-canvas px-3 py-2 text-xs text-ink">
+          {baseUrl}/api/cron/sms-run — header <strong>Authorization: Bearer &lt;CRON_SECRET&gt;</strong> (set in
+          your Render environment variables)
+        </code>
+        <form action={updateSmsNurtureSettings} className="space-y-3">
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" name="smsRemindersEnabled" defaultChecked={org.smsRemindersEnabled} />
+            Day-before pickup &amp; return reminders (includes remaining balance, if any)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              name="smsBirthdayGreetingsEnabled"
+              defaultChecked={org.smsBirthdayGreetingsEnabled}
+            />
+            Birthday greetings (needs a customer&apos;s birthday on file — Customers → Edit)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              name="smsHolidayGreetingsEnabled"
+              defaultChecked={org.smsHolidayGreetingsEnabled}
+            />
+            Philippine holiday greetings, sent to your whole customer list
+          </label>
+          <div className="max-w-xs">
+            <label className={label}>Remove from SMS list after (months of no bookings)</label>
+            <input
+              name="smsInactivityMonths"
+              type="number"
+              min={1}
+              defaultValue={org.smsInactivityMonths}
+              className={field}
+            />
+          </div>
+          <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
+            Save SMS Settings
           </button>
         </form>
       </section>
