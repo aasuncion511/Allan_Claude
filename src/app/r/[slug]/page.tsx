@@ -68,8 +68,13 @@ export default async function StorefrontHome({
               )}
             </div>
           </div>
-          <div className="flex h-64 items-center justify-center rounded-2xl bg-emerald-100 text-7xl sm:h-80">
-            🚗
+          <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-emerald-100 text-7xl sm:h-80">
+            {org.heroImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.heroImageUrl} alt={org.name} className="h-full w-full object-cover" />
+            ) : (
+              "🚗"
+            )}
           </div>
         </div>
       </section>

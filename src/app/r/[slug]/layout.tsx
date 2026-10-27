@@ -22,7 +22,12 @@ export default async function StorefrontLayout({
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href={`/r/${org.slug}`} className="flex items-center gap-2">
-            <span className="text-2xl">🚗</span>
+            {org.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.logoUrl} alt={org.name} className="h-8 w-8 object-contain" />
+            ) : (
+              <span className="text-2xl">🚗</span>
+            )}
             <span className="text-lg font-bold">{org.name}</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 sm:flex">

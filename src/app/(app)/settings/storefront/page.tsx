@@ -71,6 +71,16 @@ export default async function StorefrontSettingsPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <label className={label}>Logo URL</label>
+              <input name="logoUrl" defaultValue={org.logoUrl ?? ""} className={field} placeholder="https://…" />
+            </div>
+            <div>
+              <label className={label}>Hero Image URL (homepage banner)</label>
+              <input name="heroImageUrl" defaultValue={org.heroImageUrl ?? ""} className={field} placeholder="https://…" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className={label}>Contact Phone</label>
               <input name="contactPhone" defaultValue={org.contactPhone ?? ""} className={field} />
             </div>
