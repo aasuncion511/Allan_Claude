@@ -71,7 +71,7 @@ async function main() {
       slug: "yourcarrental-company",
       subscriptionStatus: "ACTIVE",
       tagline: "Travel Made Easy and Fun!",
-      heroImageUrl: "/vehicles/hero-fortuner.png",
+      heroImageUrl: "/vehicles/hero-fortuner-monastery.png",
       aboutText:
         "YourCarRental Company provides reliable and affordable cars for every trip — solo rides, family outings, and business travel. All our units are well-maintained and ready for the road.",
       contactPhone: "+63 917 123 4567",
