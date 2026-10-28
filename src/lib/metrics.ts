@@ -42,11 +42,11 @@ export async function getVehicleMonthlySummary(
 ): Promise<MonthlyRow[]> {
   const [bookings, expenses, maintenance, fuel] = await Promise.all([
     prisma.booking.findMany({
-      // HOLD is excluded — it's not a confirmed booking yet (just a 2-hour
-      // placeholder), so its full rental total shouldn't count as revenue
-      // until it converts to RESERVED/ACTIVE.
+      // HOLD is excluded — it's not a confirmed booking yet (just a free,
+      // time-boxed placeholder), so it has no revenue until it converts to
+      // RESERVED/ACTIVE.
       where: { organizationId, vehicleId, status: { notIn: ["CANCELLED", "HOLD"] } },
-      select: { startDate: true, totalAmount: true },
+      select: { startDate: true, amountPaid: true },
     }),
     prisma.expense.findMany({
       where: { organizationId, vehicleId },
@@ -65,7 +65,11 @@ export async function getVehicleMonthlySummary(
   const revenueMap = new Map<MonthKey, number>();
   const expenseMap = new Map<MonthKey, number>();
 
-  for (const b of bookings) addToMap(revenueMap, b.startDate, b.totalAmount);
+  // Cash-basis revenue: only what's actually been collected (e.g. the
+  // reservation fee on a confirmed online booking) counts as revenue now —
+  // the remaining balance is tracked separately as a collectible, not
+  // double-counted here as already-earned.
+  for (const b of bookings) addToMap(revenueMap, b.startDate, b.amountPaid);
   for (const e of expenses) addToMap(expenseMap, e.date, e.amount);
   for (const m of maintenance) addToMap(expenseMap, m.date, m.cost);
   for (const f of fuel) addToMap(expenseMap, f.date, f.cost);
