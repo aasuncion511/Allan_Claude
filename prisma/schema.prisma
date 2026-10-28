@@ -373,8 +373,11 @@ model BookingCharge {
   amount             Float
   status             ChargeStatus @default(PENDING)
   paymongoCheckoutId String?
+  /// Persisted so staff can re-send/QR the same link later — PayMongo
+  /// checkout sessions aren't re-fetchable by a stable URL otherwise.
+  paymongoCheckoutUrl String?
   /// "paymongo" when collected online, "manual" when a staffer recorded an
-  /// offline payment as a fallback (e.g. PayMongo was down).
+  /// offline (cash) payment — never created with a checkout session.
   paidVia            String?
   recordedByUserId   String?
   createdAt          DateTime     @default(now())
