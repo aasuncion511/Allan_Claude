@@ -8,8 +8,9 @@ import { getBaseUrl } from "@/lib/url";
 import { sendBookingConfirmationEmail } from "@/lib/booking-contract";
 import { requestRefund } from "@/lib/refunds";
 import type { RefundReason } from "@/lib/paymongo";
+import { syncVehicleStatus, type BookingStatusForVehicle } from "@/lib/vehicle-status";
 
-type BookingStatus = "RESERVED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+type BookingStatus = BookingStatusForVehicle;
 
 function parseBookingForm(formData: FormData) {
   const startDate = new Date(String(formData.get("startDate")));
@@ -35,30 +36,6 @@ function parseBookingForm(formData: FormData) {
       String(formData.get("dropoffLocation") ?? "").trim() || null,
     notes: String(formData.get("notes") ?? "").trim() || null,
   };
-}
-
-async function syncVehicleStatus(
-  organizationId: string,
-  vehicleId: string,
-  bookingStatus: BookingStatus
-) {
-  const vehicle = await prisma.vehicle.findFirst({
-    where: { id: vehicleId, organizationId },
-  });
-  if (!vehicle) return;
-  if (vehicle.status === "MAINTENANCE" || vehicle.status === "OUT_OF_SERVICE") {
-    return;
-  }
-  const nextStatus =
-    bookingStatus === "ACTIVE"
-      ? "BOOKED"
-      : bookingStatus === "RESERVED"
-        ? "RESERVED"
-        : "AVAILABLE";
-  await prisma.vehicle.updateMany({
-    where: { id: vehicleId, organizationId },
-    data: { status: nextStatus },
-  });
 }
 
 async function assertOwnedByOrg(organizationId: string, vehicleId: string, customerId: string) {
@@ -164,6 +141,9 @@ export async function requestBookingRefundAction(
   if (!result.ok) return { error: result.error };
   revalidatePath(`/bookings/${bookingId}/edit`);
   revalidatePath("/bookings/refunds");
+  revalidatePath("/bookings");
+  revalidatePath("/fleet");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
