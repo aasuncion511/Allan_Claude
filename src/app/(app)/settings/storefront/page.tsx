@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { getBaseUrl } from "@/lib/url";
+import { maskSecret } from "@/lib/format";
 import { DEFAULT_TERMS_AND_CONDITIONS } from "@/lib/booking-contract";
 import {
   updateStorefrontProfile,
@@ -171,9 +172,14 @@ export default async function StorefrontSettingsPage() {
               <input
                 name="paymongoSecretKey"
                 type="password"
-                defaultValue={org.paymongoSecretKey ?? ""}
+                autoComplete="off"
+                defaultValue=""
                 className={field}
-                placeholder="sk_test_…"
+                placeholder={
+                  maskSecret(org.paymongoSecretKey)
+                    ? `On file (${maskSecret(org.paymongoSecretKey)}) — leave blank to keep`
+                    : "sk_test_…"
+                }
               />
             </div>
             <div>
@@ -191,11 +197,27 @@ export default async function StorefrontSettingsPage() {
             <input
               name="paymongoWebhookSecret"
               type="password"
-              defaultValue={org.paymongoWebhookSecret ?? ""}
+              autoComplete="off"
+              defaultValue=""
               className={field}
-              placeholder="whsk_…"
+              placeholder={
+                maskSecret(org.paymongoWebhookSecret)
+                  ? `On file (${maskSecret(org.paymongoWebhookSecret)}) — leave blank to keep`
+                  : "whsk_…"
+              }
             />
           </div>
+          <p className="text-xs text-ink-soft">
+            For your security, saved keys are never sent back to this page — only the last 4
+            characters are shown. Leave a field blank to keep its current value; enter a new value
+            to replace it.
+          </p>
+          {(org.paymongoSecretKey || org.paymongoWebhookSecret || org.paymongoPublicKey) && (
+            <label className="flex items-center gap-2 text-xs text-ink-soft">
+              <input name="clearPaymongoKeys" type="checkbox" className="h-4 w-4 rounded border-line bg-surface" />
+              Disconnect PayMongo (clear all keys above)
+            </label>
+          )}
           <label className="flex items-center gap-2 text-sm text-ink">
             <input
               name="paymongoLiveMode"
@@ -352,11 +374,27 @@ export default async function StorefrontSettingsPage() {
               <input
                 name="ghlApiToken"
                 type="password"
-                defaultValue={org.ghlApiToken ?? ""}
+                autoComplete="off"
+                defaultValue=""
                 className={field}
+                placeholder={
+                  maskSecret(org.ghlApiToken)
+                    ? `On file (${maskSecret(org.ghlApiToken)}) — leave blank to keep`
+                    : undefined
+                }
               />
             </div>
           </div>
+          <p className="text-xs text-ink-soft">
+            For your security, the saved token is never sent back to this page. Leave blank to
+            keep it, or enter a new one to replace it.
+          </p>
+          {org.ghlApiToken && (
+            <label className="flex items-center gap-2 text-xs text-ink-soft">
+              <input name="clearGhlToken" type="checkbox" className="h-4 w-4 rounded border-line bg-surface" />
+              Clear the saved token
+            </label>
+          )}
           <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">
             Save CRM Settings
           </button>

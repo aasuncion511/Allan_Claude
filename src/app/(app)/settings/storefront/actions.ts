@@ -40,14 +40,28 @@ export async function updatePaymentSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
+  const clearKeys = formData.get("clearPaymongoKeys") === "on";
+  // Secret fields are never pre-filled back into the page (see settings page),
+  // so a blank submission means "leave unchanged", not "clear it" — otherwise
+  // every save that doesn't re-type the key would silently wipe it. The
+  // explicit checkbox above is the only way to intentionally disconnect.
+  const secretField = (name: string) => {
+    if (clearKeys) return null;
+    const value = String(formData.get(name) ?? "").trim();
+    return value || undefined;
+  };
 
   await prisma.organization.update({
     where: { id: organizationId },
     data: {
-      paymongoSecretKey: field("paymongoSecretKey"),
-      paymongoPublicKey: field("paymongoPublicKey"),
-      paymongoWebhookSecret: field("paymongoWebhookSecret"),
-      paymongoLiveMode: formData.get("paymongoLiveMode") === "on",
+      ...(secretField("paymongoSecretKey") !== undefined
+        ? { paymongoSecretKey: secretField("paymongoSecretKey") }
+        : {}),
+      paymongoPublicKey: clearKeys ? null : field("paymongoPublicKey"),
+      ...(secretField("paymongoWebhookSecret") !== undefined
+        ? { paymongoWebhookSecret: secretField("paymongoWebhookSecret") }
+        : {}),
+      paymongoLiveMode: clearKeys ? false : formData.get("paymongoLiveMode") === "on",
     },
   });
 
@@ -137,12 +151,16 @@ export async function updateGhlSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
+  const clearToken = formData.get("clearGhlToken") === "on";
+  // ghlApiToken is never pre-filled back into the page — a blank submission
+  // means "leave unchanged" unless the explicit clear checkbox is ticked.
+  const tokenValue = clearToken ? null : String(formData.get("ghlApiToken") ?? "").trim() || undefined;
 
   await prisma.organization.update({
     where: { id: organizationId },
     data: {
       ghlLocationId: field("ghlLocationId"),
-      ghlApiToken: field("ghlApiToken"),
+      ...(tokenValue !== undefined ? { ghlApiToken: tokenValue } : {}),
     },
   });
 
