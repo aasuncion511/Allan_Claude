@@ -7,6 +7,7 @@ import { setSessionCookie } from "@/lib/session";
 import { getStripe } from "@/lib/stripe";
 import { trialEndDate } from "@/lib/subscription";
 import { uniqueOrgSlug } from "@/lib/slug";
+import { checkSignupRateLimit } from "@/lib/rate-limit";
 
 export type SignupState = { error?: string } | undefined;
 
@@ -14,6 +15,9 @@ export async function signupAction(
   _prevState: SignupState,
   formData: FormData
 ): Promise<SignupState> {
+  const limitError = await checkSignupRateLimit("staff");
+  if (limitError) return { error: limitError };
+
   const companyName = String(formData.get("companyName") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "")

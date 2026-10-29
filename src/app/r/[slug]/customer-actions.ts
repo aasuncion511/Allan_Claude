@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword } from "@/lib/customer-auth";
 import { setCustomerSessionCookie, clearCustomerSessionCookie } from "@/lib/customer-session";
 import { getPublicOrgBySlug } from "@/lib/public-org";
 import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
+import { checkLoginRateLimit, checkSignupRateLimit } from "@/lib/rate-limit";
 
 export type CustomerAuthState = { error?: string } | undefined;
 
@@ -14,6 +15,9 @@ export async function customerSignupAction(
   _prevState: CustomerAuthState,
   formData: FormData
 ): Promise<CustomerAuthState> {
+  const limitError = await checkSignupRateLimit(`customer:${slug}`);
+  if (limitError) return { error: limitError };
+
   const org = await getPublicOrgBySlug(slug);
   if (!org) return { error: "This rental company could not be found." };
 
@@ -69,6 +73,9 @@ export async function customerLoginAction(
   _prevState: CustomerAuthState,
   formData: FormData
 ): Promise<CustomerAuthState> {
+  const limitError = await checkLoginRateLimit(`customer:${slug}`);
+  if (limitError) return { error: limitError };
+
   const org = await getPublicOrgBySlug(slug);
   if (!org) return { error: "This rental company could not be found." };
 

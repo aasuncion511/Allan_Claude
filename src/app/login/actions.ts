@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth";
 import { setSessionCookie, clearSessionCookie } from "@/lib/session";
 import { firstAccessibleRoute } from "@/lib/permissions";
+import { checkLoginRateLimit } from "@/lib/rate-limit";
 
 export type LoginState = { error?: string } | undefined;
 
@@ -12,6 +13,9 @@ export async function loginAction(
   _prevState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
+  const limitError = await checkLoginRateLimit("staff");
+  if (limitError) return { error: limitError };
+
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
