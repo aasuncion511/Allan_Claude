@@ -1,12 +1,21 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import bcrypt from "bcryptjs";
 import { DEFAULT_STAFF_PERMISSIONS } from "../src/lib/permissions";
 
-const adapter = new PrismaBetterSqlite3({
-  url: (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
-});
+// Same adapter selection as src/lib/db.ts — Turso in production, local
+// SQLite file for everything else (dev, manual local reseeds).
+const adapter =
+  process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN
+    ? new PrismaLibSql({
+        url: process.env.TURSO_DATABASE_URL,
+        authToken: process.env.TURSO_AUTH_TOKEN,
+      })
+    : new PrismaBetterSqlite3({
+        url: (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""),
+      });
 const prisma = new PrismaClient({ adapter });
 
 const VEHICLES = [

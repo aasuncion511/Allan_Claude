@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node scripts/migrate-turso.mjs && next start",
+    "start": "node scripts/migrate-turso.mjs && node scripts/seed-if-empty.mjs && next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
