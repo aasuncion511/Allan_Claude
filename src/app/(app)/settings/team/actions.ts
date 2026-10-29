@@ -89,6 +89,34 @@ export async function changeOwnPassword(
   return { success: true };
 }
 
+export type ChangeEmailState = { error?: string; success?: boolean } | undefined;
+
+export async function changeOwnEmail(
+  _prevState: ChangeEmailState,
+  formData: FormData
+): Promise<ChangeEmailState> {
+  const user = await requireUser();
+
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newEmail = String(formData.get("newEmail") ?? "").trim().toLowerCase();
+
+  const ok = await verifyPassword(currentPassword, user.passwordHash);
+  if (!ok) return { error: "Current password is incorrect." };
+  if (!newEmail || !newEmail.includes("@")) return { error: "Enter a valid email address." };
+  if (newEmail === user.email) return { error: "That's already your current email." };
+
+  const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+  if (existing) return { error: "That email is already in use by another account." };
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { email: newEmail },
+  });
+
+  revalidatePath("/settings/team");
+  return { success: true };
+}
+
 export async function removeTeammate(memberId: string) {
   const user = await requireUser();
   if (user.role !== "OWNER") notFound();
