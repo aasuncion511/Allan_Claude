@@ -10,6 +10,7 @@ import {
   updatePaymentSettings,
   updateReservationPricing,
   updateBookingAddOns,
+  updateCustomDomain,
   updateGhlSettings,
   updateSmsNurtureSettings,
   updateLegalSettings,
@@ -23,7 +24,12 @@ const field =
   "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
 const label = "mb-1 block text-sm font-medium text-ink";
 
-export default async function StorefrontSettingsPage() {
+export default async function StorefrontSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ domainError?: string }>;
+}) {
+  const { domainError } = await searchParams;
   const user = await requirePermission("storefrontSettings");
   const org = await prisma.organization.findUniqueOrThrow({
     where: { id: user.organizationId },
@@ -38,6 +44,7 @@ export default async function StorefrontSettingsPage() {
   const baseUrl = await getBaseUrl();
   const publicUrl = `${baseUrl}/r/${org.slug}`;
   const webhookUrl = `${baseUrl}/api/paymongo/webhook/${org.id}`;
+  const platformHost = new URL(baseUrl).hostname;
 
   return (
     <div className="max-w-3xl space-y-10">
@@ -61,6 +68,59 @@ export default async function StorefrontSettingsPage() {
         <p className="mt-1 text-xs text-ink-soft">
           Share this link anywhere — social media, ads, your old website.
         </p>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink-soft">
+          Custom Domain
+        </h2>
+        {domainError && (
+          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{domainError}</p>
+        )}
+        {org.customDomain ? (
+          <p className="mb-4 text-sm text-ink">
+            Your storefront is live at{" "}
+            <a href={`https://${org.customDomain}`} target="_blank" rel="noreferrer" className="text-brand hover:underline">
+              {org.customDomain}
+            </a>
+            .
+          </p>
+        ) : (
+          <p className="mb-4 text-sm text-ink-soft">
+            Use your own domain for the booking site instead of the link above. In your domain
+            registrar&apos;s DNS settings, add a CNAME record pointing your domain (or a
+            subdomain, e.g. <span className="font-mono">rentals</span>) to{" "}
+            <span className="font-mono">{platformHost}</span>, then enter it below.
+          </p>
+        )}
+        <form action={updateCustomDomain} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[14rem] flex-1">
+            <label className={label}>Domain</label>
+            <input
+              name="customDomain"
+              placeholder="rentals.yourbrand.com"
+              defaultValue={org.customDomain ?? ""}
+              className={field}
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+          >
+            Save
+          </button>
+        </form>
+        {org.customDomain && (
+          <form action={updateCustomDomain} className="mt-2">
+            <label className="flex items-center gap-2 text-xs text-ink-soft">
+              <input type="checkbox" name="removeCustomDomain" />
+              Disconnect this domain and go back to the link above
+            </label>
+            <button type="submit" className="mt-2 text-xs font-medium text-danger-text hover:underline">
+              Disconnect
+            </button>
+          </form>
+        )}
       </section>
 
       <section className="rounded-xl border border-line bg-surface p-6">

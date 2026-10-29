@@ -161,6 +161,44 @@ export async function updateSmsNurtureSettings(formData: FormData) {
   revalidatePath("/settings/storefront");
 }
 
+const HOSTNAME_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
+/** Lets a client point their own domain at their storefront — see proxy.ts
+ *  for how an incoming request on that host gets routed to /r/[slug]. */
+export async function updateCustomDomain(formData: FormData) {
+  const { organizationId } = await requirePermission("storefrontSettings");
+
+  if (formData.get("removeCustomDomain") === "on") {
+    await prisma.organization.update({ where: { id: organizationId }, data: { customDomain: null } });
+    revalidatePath("/settings/storefront");
+    return;
+  }
+
+  const raw = String(formData.get("customDomain") ?? "").trim().toLowerCase();
+  if (!raw) return;
+
+  const hostname = raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  if (!HOSTNAME_RE.test(hostname)) {
+    redirect(
+      `/settings/storefront?domainError=${encodeURIComponent(
+        "That doesn't look like a valid domain, e.g. rentals.yourbrand.com"
+      )}`
+    );
+  }
+
+  try {
+    await prisma.organization.update({ where: { id: organizationId }, data: { customDomain: hostname } });
+  } catch {
+    redirect(
+      `/settings/storefront?domainError=${encodeURIComponent(
+        "That domain is already connected to a different account."
+      )}`
+    );
+  }
+
+  revalidatePath("/settings/storefront");
+}
+
 export async function updateGhlSettings(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 

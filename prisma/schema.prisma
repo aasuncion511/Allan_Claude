@@ -117,6 +117,10 @@ model Organization {
   id                   String   @id @default(cuid())
   name                 String
   slug                 String   @unique
+  /// Client's own domain (e.g. "rentals.theirbrand.com"), pointed at this app
+  /// via CNAME. When set, proxy.ts rewrites requests to that host onto the
+  /// /r/[slug] storefront — see proxy.ts for the resolution logic.
+  customDomain         String?  @unique
   createdAt            DateTime @default(now())
 
   // Public storefront content
