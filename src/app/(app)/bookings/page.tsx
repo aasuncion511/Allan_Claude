@@ -27,6 +27,12 @@ export default async function BookingsPage() {
         description={`${bookings.length} booking${bookings.length === 1 ? "" : "s"} — unit schedule at a glance`}
         actions={
           <div className="flex gap-2">
+            <Link
+              href="/bookings/calendar"
+              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas"
+            >
+              📅 Fleet Calendar
+            </Link>
             {user.role === "OWNER" && (
               <Link
                 href="/bookings/refunds"
