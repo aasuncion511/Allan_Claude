@@ -46,7 +46,7 @@ export async function getVehicleMonthlySummary(
       // time-boxed placeholder), so it has no revenue until it converts to
       // RESERVED/ACTIVE.
       where: { organizationId, vehicleId, status: { notIn: ["CANCELLED", "HOLD"] } },
-      select: { startDate: true, amountPaid: true },
+      select: { amountPaid: true, paymentConfirmedAt: true, updatedAt: true },
     }),
     prisma.expense.findMany({
       where: { organizationId, vehicleId },
@@ -68,8 +68,19 @@ export async function getVehicleMonthlySummary(
   // Cash-basis revenue: only what's actually been collected (e.g. the
   // reservation fee on a confirmed online booking) counts as revenue now —
   // the remaining balance is tracked separately as a collectible, not
-  // double-counted here as already-earned.
-  for (const b of bookings) addToMap(revenueMap, b.startDate, b.amountPaid);
+  // double-counted here as already-earned. Dated by when the money was
+  // actually received, not the rental date — a September payment for a
+  // December rental must show as September revenue, not December's.
+  // paymentConfirmedAt (set by the PayMongo webhook) is exact for online
+  // payments; cash/manual payments have no such timestamp, so updatedAt (the
+  // last time staff touched the booking, typically right when they record
+  // the payment) is the closest available proxy. This is still cash-basis by
+  // booking, not a full per-transaction ledger — a booking paid in two
+  // separate installments only shows the later date — but it fixes the
+  // confirmed bug of dating every payment by the rental's start date.
+  for (const b of bookings) {
+    addToMap(revenueMap, b.paymentConfirmedAt ?? b.updatedAt, b.amountPaid);
+  }
   for (const e of expenses) addToMap(expenseMap, e.date, e.amount);
   for (const m of maintenance) addToMap(expenseMap, m.date, m.cost);
   for (const f of fuel) addToMap(expenseMap, f.date, f.cost);
