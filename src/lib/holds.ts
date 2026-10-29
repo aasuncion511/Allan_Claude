@@ -227,13 +227,25 @@ export async function getHoldState(bookingId: string, customerId: string): Promi
  * or a reconciliation pass finding an already-confirmed booking is always
  * a safe no-op (v2 handoff acceptance tests 14, 15, 19 — "a late webhook
  * must not create two confirmed bookings").
+ *
+ * `organizationId` MUST be the org whose webhook/credentials actually
+ * authenticated this confirmation (resolved from the webhook URL's signed
+ * org, or from the reconciliation cron's own DB row) — never trust a
+ * `bookingId` alone. A webhook event is only proof that ITS OWN org's
+ * PayMongo account fired it; without this check, any org on the platform
+ * could confirm (and silently steal) a hold belonging to a different org
+ * by crafting their own checkout session's metadata to reference someone
+ * else's booking id.
  */
 export async function confirmHoldPayment(
   bookingId: string,
-  checkoutId: string
+  checkoutId: string,
+  organizationId: string
 ): Promise<{ confirmed: true; bookingId: string } | { confirmed: false }> {
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking || booking.status !== "HOLD") return { confirmed: false };
+  if (!booking || booking.status !== "HOLD" || booking.organizationId !== organizationId) {
+    return { confirmed: false };
+  }
 
   const now = new Date();
   const updated = await prisma.booking.update({

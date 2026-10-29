@@ -87,7 +87,7 @@ async function resolveHold(
     if (result.paymentState === "paid") {
       // Payment actually succeeded (e.g. landed right as the timer hit
       // zero) — confirm it here even if the webhook never arrives.
-      const confirmed = await confirmHoldPayment(hold.id, hold.paymongoCheckoutId);
+      const confirmed = await confirmHoldPayment(hold.id, hold.paymongoCheckoutId, org.id);
       if (confirmed.confirmed) await notifyReservationConfirmed(hold.id, baseUrl);
       return { bookingId: hold.id, outcome: "confirmed_via_reconciliation" };
     }

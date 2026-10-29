@@ -53,7 +53,7 @@ export async function POST(
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
       const { bookingId } = metadata;
       if (bookingId) {
-        const result = await confirmHoldPayment(bookingId, checkoutId);
+        const result = await confirmHoldPayment(bookingId, checkoutId, org.id);
         if (result.confirmed) await notifyReservationConfirmed(bookingId, baseUrl);
       }
     }
