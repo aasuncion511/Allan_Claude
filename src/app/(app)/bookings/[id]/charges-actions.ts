@@ -8,6 +8,7 @@ import { createCheckoutSession, pesosToCentavos } from "@/lib/paymongo";
 import { getBaseUrl } from "@/lib/url";
 import { composeChargeDescription } from "@/lib/charge-reasons";
 import { upsertGhlContact, sendGhlEmail, sendGhlSms, isGhlConfigured } from "@/lib/ghl";
+import { isSemaphoreConfigured, sendSemaphoreSms } from "@/lib/semaphore";
 import { formatCurrency } from "@/lib/format";
 
 function readReasonAndDetail(formData: FormData): { description: string } | { error: string } {
@@ -213,8 +214,9 @@ export async function sendChargeLinkEmail(
   return result.ok ? { success: true } : { error: result.error };
 }
 
-/** Texts the customer the payment link for a pending charge, via GHL SMS
- *  (same channel as the automated pickup/return reminders). */
+/** Texts the customer the payment link for a pending charge — via the org's
+ *  own GHL location when connected, else the shared platform Semaphore
+ *  account (same fallback order as the automated pickup/return reminders). */
 export async function sendChargeLinkSms(
   bookingId: string,
   chargeId: string,
@@ -227,20 +229,26 @@ export async function sendChargeLinkSms(
   const { charge, booking } = loaded;
 
   if (!booking.customer.phone) return { error: "This customer has no phone number on file." };
-  if (!isGhlConfigured(booking.organization)) {
-    return { error: "GoHighLevel isn't connected — add a Location ID and API key in Settings → Storefront." };
-  }
-
-  const ghlConfig = { locationId: booking.organization.ghlLocationId!, apiToken: booking.organization.ghlApiToken! };
-  const contactId = await upsertGhlContact(ghlConfig, {
-    name: booking.customer.name,
-    email: booking.customer.email ?? "",
-    phone: booking.customer.phone,
-    source: "Fleet Manager balance payment",
-  });
-  if (!contactId) return { error: "Could not sync/find the customer as a GHL contact." };
 
   const message = `${booking.organization.name}: ${charge.description} — ${formatCurrency(charge.amount)}. Pay here: ${charge.paymongoCheckoutUrl}`;
-  const result = await sendGhlSms(ghlConfig, { contactId, message });
-  return result.ok ? { success: true } : { error: result.error };
+
+  if (isGhlConfigured(booking.organization)) {
+    const ghlConfig = { locationId: booking.organization.ghlLocationId!, apiToken: booking.organization.ghlApiToken! };
+    const contactId = await upsertGhlContact(ghlConfig, {
+      name: booking.customer.name,
+      email: booking.customer.email ?? "",
+      phone: booking.customer.phone,
+      source: "Fleet Manager balance payment",
+    });
+    if (!contactId) return { error: "Could not sync/find the customer as a GHL contact." };
+    const result = await sendGhlSms(ghlConfig, { contactId, message });
+    return result.ok ? { success: true } : { error: result.error };
+  }
+
+  if (isSemaphoreConfigured()) {
+    const result = await sendSemaphoreSms({ to: booking.customer.phone, message });
+    return result.ok ? { success: true } : { error: result.error };
+  }
+
+  return { error: "No SMS provider is connected — add a GHL Location ID/API key in Settings → Storefront, or configure the platform's Semaphore key." };
 }

@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/db";
 import { isGhlConfigured, sendGhlSms, upsertGhlContact } from "@/lib/ghl";
+import { isSemaphoreConfigured, sendSemaphoreSms } from "@/lib/semaphore";
 import { formatCurrency } from "@/lib/format";
+
+/** Which provider a given org's nurture run sends through — resolved once per
+ * org in runSmsNurtureForOrg, then threaded through every send. GHL (the
+ * client's own bring-your-own location) takes priority when configured;
+ * Semaphore is the shared platform fallback for orgs without one. */
+type SmsChannel =
+  | { type: "ghl"; config: { locationId: string; apiToken: string } }
+  | { type: "semaphore" };
 
 /** Fixed-date Philippine holidays. Movable ones (Holy Week, Lunar New Year,
  * National Heroes Day) aren't included — there's no admin UI yet to add
@@ -60,7 +69,7 @@ type OrgForNurture = {
 type SendOutcome = { sent: number; failed: number; skipped: number };
 
 async function sendAndLog(
-  ghlConfig: { locationId: string; apiToken: string },
+  channel: SmsChannel,
   org: { id: string },
   customer: { id: string; name: string; email: string | null; phone: string },
   kind: "PICKUP_REMINDER" | "RETURN_REMINDER" | "BIRTHDAY" | "HOLIDAY",
@@ -72,28 +81,33 @@ async function sendAndLog(
   });
   if (existing) return "skipped";
 
-  const contactId = await upsertGhlContact(ghlConfig, {
-    name: customer.name,
-    email: customer.email ?? "",
-    phone: customer.phone,
-    source: "Fleet Manager SMS nurture",
-  });
-  if (!contactId) {
-    await prisma.smsLog.create({
-      data: {
-        organizationId: org.id,
-        customerId: customer.id,
-        kind,
-        dedupeKey,
-        message,
-        status: "FAILED",
-        error: "Could not sync/find the customer as a GHL contact",
-      },
+  let result: { ok: true } | { ok: false; error: string };
+  if (channel.type === "semaphore") {
+    result = await sendSemaphoreSms({ to: customer.phone, message });
+  } else {
+    const contactId = await upsertGhlContact(channel.config, {
+      name: customer.name,
+      email: customer.email ?? "",
+      phone: customer.phone,
+      source: "Fleet Manager SMS nurture",
     });
-    return "failed";
+    if (!contactId) {
+      await prisma.smsLog.create({
+        data: {
+          organizationId: org.id,
+          customerId: customer.id,
+          kind,
+          dedupeKey,
+          message,
+          status: "FAILED",
+          error: "Could not sync/find the customer as a GHL contact",
+        },
+      });
+      return "failed";
+    }
+    result = await sendGhlSms(channel.config, { contactId, message });
   }
 
-  const result = await sendGhlSms(ghlConfig, { contactId, message });
   await prisma.smsLog.create({
     data: {
       organizationId: org.id,
@@ -108,7 +122,7 @@ async function sendAndLog(
   return result.ok ? "sent" : "failed";
 }
 
-async function runPickupReminders(org: OrgForNurture, ghlConfig: { locationId: string; apiToken: string }) {
+async function runPickupReminders(org: OrgForNurture, channel: SmsChannel) {
   const outcome: SendOutcome = { sent: 0, failed: 0, skipped: 0 };
   const { start, end } = dateBoundsInDaysFromToday(1);
   const bookings = await prisma.booking.findMany({
@@ -128,7 +142,7 @@ async function runPickupReminders(org: OrgForNurture, ghlConfig: { locationId: s
     const message = `Hi ${booking.customer.name}! Reminder: your ${booking.vehicle.year} ${booking.vehicle.make} ${
       booking.vehicle.model
     } pickup is tomorrow${booking.startTime ? ` at ${booking.startTime}` : ""}. — ${org.name}`;
-    const result = await sendAndLog(ghlConfig, org, booking.customer, "PICKUP_REMINDER", `pickup:${booking.id}`, message);
+    const result = await sendAndLog(channel, org, booking.customer, "PICKUP_REMINDER", `pickup:${booking.id}`, message);
     if (result === "sent") {
       await prisma.booking.update({ where: { id: booking.id }, data: { pickupReminderSentAt: new Date() } });
     }
@@ -137,7 +151,7 @@ async function runPickupReminders(org: OrgForNurture, ghlConfig: { locationId: s
   return outcome;
 }
 
-async function runReturnReminders(org: OrgForNurture, ghlConfig: { locationId: string; apiToken: string }) {
+async function runReturnReminders(org: OrgForNurture, channel: SmsChannel) {
   const outcome: SendOutcome = { sent: 0, failed: 0, skipped: 0 };
   const { start, end } = dateBoundsInDaysFromToday(1);
   const bookings = await prisma.booking.findMany({
@@ -161,7 +175,7 @@ async function runReturnReminders(org: OrgForNurture, ghlConfig: { locationId: s
     } rental is due back tomorrow${booking.endTime ? ` at ${booking.endTime}` : ""}.${balanceLine} Thanks for renting with ${
       org.name
     }!`;
-    const result = await sendAndLog(ghlConfig, org, booking.customer, "RETURN_REMINDER", `return:${booking.id}`, message);
+    const result = await sendAndLog(channel, org, booking.customer, "RETURN_REMINDER", `return:${booking.id}`, message);
     if (result === "sent") {
       await prisma.booking.update({ where: { id: booking.id }, data: { returnReminderSentAt: new Date() } });
     }
@@ -170,7 +184,7 @@ async function runReturnReminders(org: OrgForNurture, ghlConfig: { locationId: s
   return outcome;
 }
 
-async function runBirthdayGreetings(org: OrgForNurture, ghlConfig: { locationId: string; apiToken: string }) {
+async function runBirthdayGreetings(org: OrgForNurture, channel: SmsChannel) {
   const outcome: SendOutcome = { sent: 0, failed: 0, skipped: 0 };
   const today = phToday();
   const customers = await prisma.customer.findMany({
@@ -180,13 +194,13 @@ async function runBirthdayGreetings(org: OrgForNurture, ghlConfig: { locationId:
     const bday = customer.birthday!;
     if (bday.getUTCMonth() + 1 !== today.month || bday.getUTCDate() !== today.day) continue;
     const message = `Happy Birthday, ${customer.name}! 🎉 Wishing you a wonderful day from all of us at ${org.name}.`;
-    const result = await sendAndLog(ghlConfig, org, customer, "BIRTHDAY", `birthday:${today.year}`, message);
+    const result = await sendAndLog(channel, org, customer, "BIRTHDAY", `birthday:${today.year}`, message);
     outcome[result]++;
   }
   return outcome;
 }
 
-async function runHolidayGreetings(org: OrgForNurture, ghlConfig: { locationId: string; apiToken: string }) {
+async function runHolidayGreetings(org: OrgForNurture, channel: SmsChannel) {
   const outcome: SendOutcome = { sent: 0, failed: 0, skipped: 0 };
   const holiday = todayHoliday();
   if (!holiday) return outcome;
@@ -197,7 +211,7 @@ async function runHolidayGreetings(org: OrgForNurture, ghlConfig: { locationId: 
   for (const customer of customers) {
     const message = `Happy ${holiday.label}! Wishing you and your family a wonderful celebration. — ${org.name}`;
     const result = await sendAndLog(
-      ghlConfig,
+      channel,
       org,
       customer,
       "HOLIDAY",
@@ -233,25 +247,34 @@ async function runInactivityPurge(org: OrgForNurture): Promise<number> {
   return purged;
 }
 
+/** GHL (the client's own location) is tried first when configured — it's
+ * their existing CRM, already synced with contacts. Semaphore is the shared
+ * platform fallback for orgs that haven't set up GHL, so nurture SMS still
+ * goes out once SEMAPHORE_API_KEY is configured platform-wide. */
 export async function runSmsNurtureForOrg(org: OrgForNurture) {
-  if (!isGhlConfigured(org)) {
-    return { organizationId: org.id, skipped: "GHL not configured" as const };
+  const channel: SmsChannel | null = isGhlConfigured(org)
+    ? { type: "ghl", config: { locationId: org.ghlLocationId!, apiToken: org.ghlApiToken! } }
+    : isSemaphoreConfigured()
+      ? { type: "semaphore" }
+      : null;
+
+  if (!channel) {
+    return { organizationId: org.id, skipped: "No SMS provider configured (GHL or Semaphore)" as const };
   }
-  const ghlConfig = { locationId: org.ghlLocationId!, apiToken: org.ghlApiToken! };
 
   const pickup = org.smsRemindersEnabled
-    ? await runPickupReminders(org, ghlConfig)
+    ? await runPickupReminders(org, channel)
     : { sent: 0, failed: 0, skipped: 0 };
   const returns = org.smsRemindersEnabled
-    ? await runReturnReminders(org, ghlConfig)
+    ? await runReturnReminders(org, channel)
     : { sent: 0, failed: 0, skipped: 0 };
   const birthdays = org.smsBirthdayGreetingsEnabled
-    ? await runBirthdayGreetings(org, ghlConfig)
+    ? await runBirthdayGreetings(org, channel)
     : { sent: 0, failed: 0, skipped: 0 };
   const holidays = org.smsHolidayGreetingsEnabled
-    ? await runHolidayGreetings(org, ghlConfig)
+    ? await runHolidayGreetings(org, channel)
     : { sent: 0, failed: 0, skipped: 0 };
   const purged = await runInactivityPurge(org);
 
-  return { organizationId: org.id, pickup, returns, birthdays, holidays, purged };
+  return { organizationId: org.id, pickup, returns, birthdays, holidays, purged, channel: channel.type };
 }
