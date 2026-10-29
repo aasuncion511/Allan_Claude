@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getPublicOrgBySlug } from "@/lib/public-org";
 import { PublicVehicleCard } from "@/components/public-vehicle-card";
+import { TripSearchBar } from "@/components/trip-search-bar";
 
 const STEPS = [
   { title: "Choose Your Car", body: "Browse our fleet and pick the unit that fits your trip." },
@@ -51,17 +52,20 @@ export default async function StorefrontHome({
               {org.aboutText ||
                 "Reliable, affordable vehicles for every trip — book online in minutes."}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8">
+              <TripSearchBar slug={org.slug} />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
               <Link
                 href={`/r/${org.slug}/fleet`}
-                className="rounded-lg bg-brand px-6 py-3 text-base font-semibold text-white hover:bg-brand-dark"
+                className="text-sm font-semibold text-brand hover:underline"
               >
-                Book Your Car Today
+                Or browse the full fleet →
               </Link>
               {org.contactPhone && (
                 <a
                   href={`tel:${org.contactPhone}`}
-                  className="rounded-lg border border-slate-300 px-6 py-3 text-base font-semibold text-ink hover:bg-slate-50"
+                  className="text-sm font-semibold text-ink-soft hover:text-ink hover:underline"
                 >
                   Call {org.contactPhone}
                 </a>
