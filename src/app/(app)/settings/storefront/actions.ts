@@ -85,6 +85,7 @@ export async function updateReservationPricing(formData: FormData) {
       sedanReservationFee: positiveNumber("sedanReservationFee", 800),
       suvReservationFee: positiveNumber("suvReservationFee", 1000),
       pickupReservationFee: positiveNumber("pickupReservationFee", 1000),
+      securityDepositAmount: positiveNumber("securityDepositAmount", 2000),
     },
   });
 

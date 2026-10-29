@@ -204,7 +204,7 @@ async function main() {
             dailyRate: vehicle.dailyRate,
             totalAmount: vehicle.dailyRate * days,
             securityDeposit: 5000,
-            depositReturned: isPast,
+            securityDepositStatus: isPast ? "REFUNDED" : "HELD",
             amountPaid: isPast ? vehicle.dailyRate * days : vehicle.dailyRate * days * 0.5,
             pickupLocation: "Main Branch",
             dropoffLocation: "Main Branch",

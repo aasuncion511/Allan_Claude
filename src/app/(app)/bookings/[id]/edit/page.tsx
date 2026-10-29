@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
 import { PageHeader } from "@/components/page-header";
 import { BookingForm } from "@/components/booking-form";
 import { ChargeManager } from "../charge-manager";
 import { RefundPanel } from "../refund-panel";
+import { SecurityDepositPanel } from "../security-deposit-panel";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { updateBooking, deleteBooking, resendConfirmationEmail, markSignedPhysically } from "../../actions";
 
@@ -209,12 +209,22 @@ export default async function EditBookingPage({
 
       <ChargeManager bookingId={booking.id} charges={charges} />
 
+      <SecurityDepositPanel
+        bookingId={booking.id}
+        amount={booking.securityDeposit}
+        status={booking.securityDepositStatus}
+        collectedMethod={booking.securityDepositCollectedMethod}
+        collectedAt={booking.securityDepositCollectedAt}
+        refundMethod={booking.securityDepositRefundMethod}
+        refundedAt={booking.securityDepositRefundedAt}
+      />
+
       {booking.paymongoCheckoutId && (
         <RefundPanel
           bookingId={booking.id}
           refundable={refundable}
           refunds={refundsWithNames}
-          canRefund={hasPermission(user, "refunds")}
+          canRefund={user.role === "OWNER"}
         />
       )}
     </div>

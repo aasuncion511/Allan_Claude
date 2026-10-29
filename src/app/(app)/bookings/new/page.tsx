@@ -11,9 +11,10 @@ export default async function NewBookingPage({
 }) {
   const { vehicleId } = await searchParams;
   const { organizationId } = await requirePermission("bookings");
-  const [vehicles, customers] = await Promise.all([
+  const [vehicles, customers, org] = await Promise.all([
     prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),
     prisma.customer.findMany({ where: { organizationId }, orderBy: { name: "asc" } }),
+    prisma.organization.findUniqueOrThrow({ where: { id: organizationId } }),
   ]);
 
   return (
@@ -33,7 +34,7 @@ export default async function NewBookingPage({
             action={createBooking}
             vehicles={vehicles}
             customers={customers}
-            defaults={{ vehicleId }}
+            defaults={{ vehicleId, securityDeposit: org.securityDepositAmount }}
             submitLabel="Create Booking"
           />
         )}

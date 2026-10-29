@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { requestBookingRefundAction, type RefundActionState } from "../actions";
 
@@ -17,10 +17,21 @@ type Refund = {
 
 const REASON_LABELS: Record<string, string> = {
   duplicate: "Duplicate charge",
-  fraudulent: "Fraudulent",
-  requested_by_customer: "Requested by customer",
-  others: "Other",
+  fraudulent: "Fraudulent transaction",
+  requested_by_customer: "Customer requested cancellation",
+  others: "Other (see notes)",
 };
+
+// Business-facing reasons shown in the dropdown. PayMongo's refund API only
+// accepts the 4 values in REASON_LABELS above, so a few business reasons
+// map onto "others" — the real detail always goes in the required notes field.
+const BUSINESS_REASONS: { value: string; paymongoReason: string; label: string }[] = [
+  { value: "requested_by_customer", paymongoReason: "requested_by_customer", label: "Customer requested cancellation" },
+  { value: "duplicate", paymongoReason: "duplicate", label: "Duplicate charge" },
+  { value: "fraudulent", paymongoReason: "fraudulent", label: "Fraudulent transaction" },
+  { value: "unit_unavailable", paymongoReason: "others", label: "Vehicle unavailable / unit issue" },
+  { value: "other", paymongoReason: "others", label: "Other — specify below" },
+];
 
 export function RefundPanel({
   bookingId,
@@ -35,6 +46,9 @@ export function RefundPanel({
 }) {
   const action = requestBookingRefundAction.bind(null, bookingId);
   const [state, formAction, pending] = useActionState<RefundActionState, FormData>(action, undefined);
+  const [businessReason, setBusinessReason] = useState(BUSINESS_REASONS[0].value);
+  const selected = BUSINESS_REASONS.find((r) => r.value === businessReason) ?? BUSINESS_REASONS[0];
+  const needsDetail = businessReason === "unit_unavailable" || businessReason === "other";
 
   const field =
     "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand";
@@ -93,8 +107,8 @@ export function RefundPanel({
 
       {!canRefund ? (
         <p className="text-xs text-ink-soft">
-          You don&apos;t have the Refunds permission — ask an owner to grant it in Settings → Team if you need to
-          process one.
+          Rental-payment refunds are owner-only and can&apos;t be delegated to staff. Ask an owner to process this
+          one.
         </p>
       ) : refundable <= 0 ? (
         <p className="text-xs text-ink-soft">Nothing left to refund on this booking.</p>
@@ -115,22 +129,34 @@ export function RefundPanel({
               />
             </div>
             <div>
-              <label className={label}>Reason (for PayMongo)</label>
-              <select name="paymongoReason" defaultValue="requested_by_customer" className={field}>
-                <option value="requested_by_customer">Requested by customer</option>
-                <option value="duplicate">Duplicate charge</option>
-                <option value="fraudulent">Fraudulent</option>
-                <option value="others">Other</option>
+              <label className={label}>Reason</label>
+              <select
+                value={businessReason}
+                onChange={(e) => setBusinessReason(e.target.value)}
+                className={field}
+              >
+                {BUSINESS_REASONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
               </select>
+              <input type="hidden" name="paymongoReason" value={selected.paymongoReason} />
             </div>
           </div>
           <div>
-            <label className={label}>Justification (required — this is a policy exception)</label>
+            <label className={label}>
+              {needsDetail ? "Describe the reason (required)" : "Justification (required — this is a policy exception)"}
+            </label>
             <textarea
               name="notes"
               rows={2}
               required
-              placeholder="e.g. Unit was unavailable due to an accident; customer offered alternate dates and declined."
+              placeholder={
+                needsDetail
+                  ? "e.g. Unit was unavailable due to an accident; customer offered alternate dates and declined."
+                  : "Add any context an auditor would want to see."
+              }
               className={field}
             />
           </div>

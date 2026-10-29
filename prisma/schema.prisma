@@ -60,6 +60,15 @@ enum ChargeStatus {
   CANCELLED
 }
 
+/// Security deposits never count toward revenue (see src/lib/metrics.ts) —
+/// they're held, not earned. HELD is summed for the "Security Deposit on
+/// Hand" dashboard figure.
+enum SecurityDepositStatus {
+  NOT_COLLECTED
+  HELD
+  REFUNDED
+}
+
 enum BookingSource {
   STAFF
   ONLINE
@@ -144,6 +153,9 @@ model Organization {
   sedanReservationFee   Float @default(800)
   suvReservationFee     Float @default(1000)
   pickupReservationFee  Float @default(1000)
+  /// Flat refundable security deposit default, same across every unit —
+  /// pre-fills new bookings; editable per booking. Never counts as revenue.
+  securityDepositAmount Float @default(2000)
 
   // Booking detail add-ons — configured once, applied automatically so
   // online payment stays instant/deterministic (no manual quoting).
@@ -276,8 +288,19 @@ model Booking {
   source           BookingSource @default(STAFF)
   dailyRate        Float
   totalAmount      Float
+  /// Refundable, held separately from the rental payment — never counts
+  /// toward revenue. Distinct from reservationFeeDue (the non-refundable
+  /// category fee) and amountPaid (rental charges actually collected).
   securityDeposit  Float    @default(0)
-  depositReturned  Boolean  @default(false)
+  securityDepositStatus SecurityDepositStatus @default(NOT_COLLECTED)
+  /// "cash" (collected at pickup/delivery) or "included_in_payment" (paid
+  /// upfront as part of a full-payment invoice).
+  securityDepositCollectedMethod String?
+  securityDepositCollectedAt     DateTime?
+  /// "cash", "gcash", or "bank_transfer" — how it was handed back.
+  securityDepositRefundMethod    String?
+  securityDepositRefundedAt      DateTime?
+  securityDepositRefundedByUserId String?
   amountPaid       Float    @default(0)
   paymentStatus    PaymentStatus @default(UNPAID)
   paymongoCheckoutId String?

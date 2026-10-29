@@ -42,3 +42,13 @@ export async function requirePermission(key: PermissionKey) {
   if (!hasPermission(user, key)) redirect("/403");
   return user;
 }
+
+/** Owner-only, no staff permission can unlock this — used for rental-payment
+ *  refunds (a deliberate exception to the published policy) and anything
+ *  else that must never be delegable. Security-deposit refunds are a
+ *  separate, routine action gated by "bookings" instead. */
+export async function requireOwner() {
+  const user = await requireUser();
+  if (user.role !== "OWNER") redirect("/403");
+  return user;
+}

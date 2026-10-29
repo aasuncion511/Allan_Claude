@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -12,7 +12,7 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 export default async function RefundsLogPage() {
-  const { organizationId } = await requirePermission("refunds");
+  const { organizationId } = await requireOwner();
 
   const refunds = await prisma.refund.findMany({
     where: { organizationId },

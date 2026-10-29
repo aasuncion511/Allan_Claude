@@ -282,6 +282,19 @@ export default async function StorefrontSettingsPage() {
               />
             </div>
             <div>
+              <label className={label}>Security Deposit (₱, flat per unit)</label>
+              <input
+                name="securityDepositAmount"
+                type="number"
+                step="0.01"
+                defaultValue={org.securityDepositAmount}
+                className={field}
+              />
+              <p className="mt-1 text-xs text-ink-soft">
+                Refundable after turnover — excluded from revenue. Defaults new bookings&apos; deposit field.
+              </p>
+            </div>
+            <div>
               <label className={label}>Free Hold Window (seconds)</label>
               <input
                 name="holdWindowSeconds"

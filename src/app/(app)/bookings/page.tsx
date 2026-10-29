@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -28,7 +27,7 @@ export default async function BookingsPage() {
         description={`${bookings.length} booking${bookings.length === 1 ? "" : "s"} — unit schedule at a glance`}
         actions={
           <div className="flex gap-2">
-            {hasPermission(user, "refunds") && (
+            {user.role === "OWNER" && (
               <Link
                 href="/bookings/refunds"
                 className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas"

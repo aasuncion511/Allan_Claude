@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/badge";
 import { MonthlyChart } from "@/components/monthly-chart";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { getFleetSummary, filterByYear, sumRows, distinctYears } from "@/lib/metrics";
+import { getSecurityDepositOnHand } from "@/lib/security-deposit";
 
 const STATUS_LIST = ["AVAILABLE", "BOOKED", "RESERVED", "MAINTENANCE", "OUT_OF_SERVICE"];
 
@@ -18,7 +19,7 @@ export default async function DashboardPage({
   const { year: yearParam } = await searchParams;
   const { organizationId } = await requirePermission("dashboard");
   const now = new Date();
-  const [{ overall, perVehicle }, vehicles, collectionsBookings, pendingCharges, corporateBookings] =
+  const [{ overall, perVehicle }, vehicles, collectionsBookings, pendingCharges, corporateBookings, securityDepositOnHand] =
     await Promise.all([
       getFleetSummary(organizationId),
       prisma.vehicle.findMany({ where: { organizationId } }),
@@ -44,6 +45,7 @@ export default async function DashboardPage({
         include: { vehicle: true, customer: true, corporateClient: true },
         orderBy: { startDate: "desc" },
       }),
+      getSecurityDepositOnHand(organizationId),
     ]);
 
   const withBalance = collectionsBookings
@@ -96,11 +98,12 @@ export default async function DashboardPage({
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard
-          label={`${selectedYear} Revenue`}
+          label={`${selectedYear} Revenue (Cash Collected)`}
           value={formatCurrency(yearTotals.revenue)}
           tone="lead"
+          hint="Money actually received, not total booked"
         />
         <StatCard
           label={`${selectedYear} Expenses`}
@@ -111,6 +114,13 @@ export default async function DashboardPage({
           label={`${selectedYear} Net Profit`}
           value={formatCurrency(yearTotals.profit)}
           tone={yearTotals.profit >= 0 ? "positive" : "negative"}
+          hint="Cash collected minus expenses"
+        />
+        <StatCard
+          label="Security Deposit on Hand"
+          value={formatCurrency(securityDepositOnHand)}
+          tone="info"
+          hint="Refundable — not revenue, not included above"
         />
         <StatCard label="Fleet Size" value={String(vehicles.length)} />
       </div>
@@ -203,9 +213,12 @@ export default async function DashboardPage({
         )}
       </div>
 
-      <h2 className="mb-3 text-lg font-semibold text-ink">
+      <h2 className="mb-1 text-lg font-semibold text-ink">
         Revenue &amp; Expense per Unit — {selectedYear}
       </h2>
+      <p className="mb-3 text-xs text-ink-soft">
+        Revenue here is cash collected (amount paid), not the total booked value — it excludes security deposits.
+      </p>
       <div className="mb-8 overflow-x-auto rounded-xl border border-line">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-soft">

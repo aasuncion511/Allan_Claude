@@ -3,10 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requireOwner } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/url";
 import { sendBookingConfirmationEmail } from "@/lib/booking-contract";
 import { requestRefund } from "@/lib/refunds";
+import {
+  collectSecurityDeposit,
+  refundSecurityDeposit,
+  type DepositCollectionMethod,
+  type DepositRefundMethod,
+} from "@/lib/security-deposit";
 import type { RefundReason } from "@/lib/paymongo";
 import { syncVehicleStatus, type BookingStatusForVehicle } from "@/lib/vehicle-status";
 
@@ -121,7 +127,7 @@ export async function requestBookingRefundAction(
   _prevState: RefundActionState,
   formData: FormData
 ): Promise<RefundActionState> {
-  const user = await requirePermission("refunds");
+  const user = await requireOwner();
   const amount = Number(formData.get("amount"));
   const reasonRaw = String(formData.get("paymongoReason") ?? "requested_by_customer");
   const paymongoReason: RefundReason = REFUND_REASONS.includes(reasonRaw as RefundReason)
@@ -143,6 +149,41 @@ export async function requestBookingRefundAction(
   revalidatePath("/bookings/refunds");
   revalidatePath("/bookings");
   revalidatePath("/fleet");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export type DepositActionState = { error?: string; success?: boolean } | undefined;
+
+export async function collectSecurityDepositAction(
+  bookingId: string,
+  _prevState: DepositActionState,
+  formData: FormData
+): Promise<DepositActionState> {
+  const { organizationId } = await requirePermission("bookings");
+  const method = String(formData.get("method") ?? "cash") as DepositCollectionMethod;
+  const result = await collectSecurityDeposit({ organizationId, bookingId, method });
+  if (!result.ok) return { error: result.error };
+  revalidatePath(`/bookings/${bookingId}/edit`);
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function refundSecurityDepositAction(
+  bookingId: string,
+  _prevState: DepositActionState,
+  formData: FormData
+): Promise<DepositActionState> {
+  const user = await requirePermission("bookings");
+  const method = String(formData.get("method") ?? "cash") as DepositRefundMethod;
+  const result = await refundSecurityDeposit({
+    organizationId: user.organizationId,
+    bookingId,
+    refundedByUserId: user.id,
+    method,
+  });
+  if (!result.ok) return { error: result.error };
+  revalidatePath(`/bookings/${bookingId}/edit`);
   revalidatePath("/dashboard");
   return { success: true };
 }

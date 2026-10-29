@@ -5,7 +5,9 @@ import { formatCurrency, formatDate } from "@/lib/format";
 
 export const DEFAULT_TERMS_AND_CONDITIONS = `1. RENTAL REQUIREMENTS — Renter must present a valid driver's license and at least one other government-issued ID at pickup. The renter must be at least 21 years old.
 
-2. SECURITY & FEES — The amount paid at booking secures the reservation only. Any security deposit, and all add-on fees selected at booking (driver, delivery, drop-off, carwash, excess time), are due in full at pickup unless already settled online.
+2. SECURITY & FEES — The amount paid at booking secures the reservation only. A refundable security deposit is also required, payable in cash at pickup/delivery or included in full upon paying the rental in full online. All add-on fees selected at booking (driver, delivery, drop-off, carwash, excess time) are due in full at pickup unless already settled online.
+
+2A. SECURITY DEPOSIT REFUND — The security deposit is refundable in full after turnover of the unit at the end of the rental, provided the vehicle is returned on time, undamaged, and with no outstanding charges (fuel, tolls, violations, excess time). Any amounts owed under this contract will be deducted from the deposit before the remainder is refunded. The refund is released via GCash, bank transfer, or cash, at the renter's choice where available.
 
 3. FUEL POLICY — The vehicle is released with a noted fuel level and must be returned at the same level, or a refueling charge will apply.
 
@@ -15,7 +17,7 @@ export const DEFAULT_TERMS_AND_CONDITIONS = `1. RENTAL REQUIREMENTS — Renter m
 
 6. LATE RETURN — Returning the vehicle later than the agreed drop-off time without prior arrangement incurs an excess-hour charge at the rate on file, and may incur a full additional day's rental.
 
-7. CANCELLATION — Reservation and hold fees are non-refundable once the booking is confirmed, except where required by law.
+7. CANCELLATION — Reservation and hold fees are non-refundable once the booking is confirmed, except where required by law or at management's discretion for a documented service failure (e.g. the unit could not be supplied). The security deposit described in Section 2A is not subject to this non-refundable policy — it is always refundable after turnover, net of any amounts owed.
 
 8. ACCEPTANCE — By signing below (electronically or on a physical printout at pickup), the renter acknowledges having read and agreed to these Terms & Conditions in full.`;
 

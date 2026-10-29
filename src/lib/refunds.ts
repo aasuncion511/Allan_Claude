@@ -7,10 +7,10 @@ import { syncVehicleStatus } from "@/lib/vehicle-status";
  * The deliberate exception path to the v2 handoff's published non-refundable
  * reservation policy ("except where legally required or where the merchant
  * cannot supply the promised vehicle/service — admins must retain an
- * exceptional/refund resolution path"). Gated by the "refunds" permission,
- * separate from general "bookings" access, since this moves real money
- * against a disclosed policy and needs its own audit trail (the Refund
- * model's required `notes` field).
+ * exceptional/refund resolution path"). Owner-only (see requireOwner() in
+ * src/lib/auth.ts) — no staff permission can unlock this, since it moves
+ * real money against a disclosed policy and needs its own audit trail (the
+ * Refund model's required `notes` field).
  */
 export async function requestRefund(params: {
   organizationId: string;
@@ -84,20 +84,24 @@ export async function requestRefund(params: {
       // Collections all keep reflecting actual cash currently held — none
       // of them should keep counting money that's since been returned.
       const isFullRefund = booking.amountPaid - params.amount <= 0.01;
+      // Only auto-cancel and release the vehicle when the booking hasn't
+      // started yet (RESERVED). A full refund on an ACTIVE or COMPLETED
+      // booking is a goodwill/billing adjustment, not a cancellation — the
+      // car may still be out with the renter, so its status and the
+      // vehicle's calendar must be left alone.
+      const shouldCancelBooking = isFullRefund && booking.status === "RESERVED";
       await prisma.booking.update({
         where: { id: booking.id },
         data: {
           amountPaid: { decrement: params.amount },
-          ...(isFullRefund
-            ? // Fully refunded (policy violation / can't supply the vehicle) —
-              // this booking isn't happening, so release the hold on the
-              // vehicle's calendar rather than leaving it falsely reserved
-              // against money that's no longer held.
-              { paymentStatus: "REFUNDED", status: "CANCELLED", holdExpiresAt: null }
-            : {}),
+          ...(shouldCancelBooking
+            ? { paymentStatus: "REFUNDED", status: "CANCELLED", holdExpiresAt: null }
+            : isFullRefund
+              ? { paymentStatus: "REFUNDED" }
+              : {}),
         },
       });
-      if (isFullRefund) {
+      if (shouldCancelBooking) {
         await syncVehicleStatus(org.id, booking.vehicleId, "CANCELLED");
       }
     }
