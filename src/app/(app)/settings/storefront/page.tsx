@@ -68,6 +68,13 @@ export default async function StorefrontSettingsPage() {
         </h2>
         <form action={updateStorefrontProfile} encType="multipart/form-data" className="space-y-4">
           <div>
+            <label className={label}>Company Name</label>
+            <input name="name" required defaultValue={org.name} className={field} placeholder="YourCarRental Company" />
+            <p className="mt-1 text-xs text-ink-soft">
+              Shown on your storefront, e-invoices, and the e-sign page. Your booking site URL stays the same.
+            </p>
+          </div>
+          <div>
             <label className={label}>Tagline</label>
             <input name="tagline" defaultValue={org.tagline ?? ""} className={field} placeholder="Travel Made Easy and Fun!" />
           </div>

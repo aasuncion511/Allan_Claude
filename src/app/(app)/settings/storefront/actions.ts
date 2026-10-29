@@ -10,6 +10,7 @@ export async function updateStorefrontProfile(formData: FormData) {
   const { organizationId } = await requirePermission("storefrontSettings");
 
   const field = (name: string) => String(formData.get(name) ?? "").trim() || null;
+  const name = String(formData.get("name") ?? "").trim();
 
   const uploadedLogo = await readImageUpload(formData, "logoFile");
   const removeLogo = formData.get("removeLogo") === "on";
@@ -19,6 +20,7 @@ export async function updateStorefrontProfile(formData: FormData) {
   await prisma.organization.update({
     where: { id: organizationId },
     data: {
+      ...(name ? { name } : {}),
       tagline: field("tagline"),
       aboutText: field("aboutText"),
       ...(logoUrl !== undefined ? { logoUrl } : {}),
