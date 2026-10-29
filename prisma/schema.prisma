@@ -190,6 +190,7 @@ model Organization {
   maintenanceLogs  MaintenanceLog[]
   fuelLogs         FuelLog[]
   customerDocuments CustomerDocument[]
+  bookingInspections BookingInspection[]
   faqs             Faq[]
   testimonials     Testimonial[]
   smsLogs          SmsLog[]
@@ -422,6 +423,7 @@ model Booking {
   corporateClient  CorporateClient? @relation(fields: [corporateClientId], references: [id])
   charges          BookingCharge[]
   refunds          Refund[]
+  inspections      BookingInspection[]
 
   @@index([organizationId])
   @@index([vehicleId])
@@ -458,6 +460,37 @@ model BookingCharge {
   @@index([organizationId, status])
   @@index([bookingId])
   @@index([paymongoCheckoutId])
+}
+
+enum InspectionType {
+  RELEASE
+  RETURN
+}
+
+/// Vehicle condition recorded at pickup (RELEASE) and return (RETURN) —
+/// odometer, fuel level, condition photos, notes. Separate rows since the
+/// two happen at different times, possibly by different staff. A damage
+/// charge noted here is created as a normal BookingCharge, not duplicated
+/// payment logic — staff then collect it the same way as any other charge.
+model BookingInspection {
+  id                String         @id @default(cuid())
+  organizationId    String
+  bookingId         String
+  type              InspectionType
+  odometer          Int?
+  fuelLevel         String?
+  /// Array of inline data: URIs, same pattern as other image fields — kept
+  /// as JSON since SQLite has no native scalar list type in Prisma.
+  photos            Json           @default("[]")
+  notes             String?
+  performedByUserId String
+  performedAt       DateTime       @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  booking      Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, type])
+  @@index([organizationId])
 }
 
 /// A refund against a paid booking — the admin "exception path" the v2

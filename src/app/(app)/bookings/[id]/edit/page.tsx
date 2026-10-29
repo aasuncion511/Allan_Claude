@@ -6,6 +6,7 @@ import { BookingForm } from "@/components/booking-form";
 import { ChargeManager } from "../charge-manager";
 import { RefundPanel } from "../refund-panel";
 import { SecurityDepositPanel } from "../security-deposit-panel";
+import { InspectionPanel } from "../inspection-panel";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { updateBooking, deleteBooking, resendConfirmationEmail, markSignedPhysically } from "../../actions";
 
@@ -17,14 +18,18 @@ export default async function EditBookingPage({
   const { id } = await params;
   const user = await requirePermission("bookings");
   const { organizationId } = user;
-  const [booking, vehicles, customers, charges, refunds] = await Promise.all([
+  const [booking, vehicles, customers, charges, refunds, inspections] = await Promise.all([
     prisma.booking.findFirst({ where: { id, organizationId }, include: { corporateClient: true, customer: true } }),
     prisma.vehicle.findMany({ where: { organizationId }, orderBy: { plateNumber: "asc" } }),
     prisma.customer.findMany({ where: { organizationId }, orderBy: { name: "asc" } }),
     prisma.bookingCharge.findMany({ where: { bookingId: id, organizationId }, orderBy: { createdAt: "desc" } }),
     prisma.refund.findMany({ where: { bookingId: id, organizationId }, orderBy: { createdAt: "desc" } }),
+    prisma.bookingInspection.findMany({ where: { bookingId: id, organizationId } }),
   ]);
   if (!booking) notFound();
+
+  const releaseInspection = inspections.find((i) => i.type === "RELEASE") ?? null;
+  const returnInspection = inspections.find((i) => i.type === "RETURN") ?? null;
 
   const refunders = await prisma.user.findMany({
     where: { id: { in: refunds.map((r) => r.requestedByUserId) } },
@@ -208,6 +213,8 @@ export default async function EditBookingPage({
       </div>
 
       <ChargeManager bookingId={booking.id} charges={charges} />
+
+      <InspectionPanel bookingId={booking.id} release={releaseInspection} return={returnInspection} />
 
       <SecurityDepositPanel
         bookingId={booking.id}
