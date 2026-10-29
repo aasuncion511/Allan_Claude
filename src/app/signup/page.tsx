@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signupAction } from "./actions";
+import { PasswordInput } from "@/components/password-input";
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupAction, undefined);
@@ -59,9 +60,8 @@ export default function SignupPage() {
             <label className="mb-1 block text-sm font-medium text-ink">
               Password
             </label>
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               required
               autoComplete="new-password"
               minLength={8}

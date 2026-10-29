@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { customerSignupAction } from "../customer-actions";
+import { PasswordInput } from "@/components/password-input";
 
 export function CustomerSignupForm({
   slug,
@@ -35,7 +36,7 @@ export function CustomerSignupForm({
       </div>
       <div>
         <label className={label}>Password</label>
-        <input name="password" type="password" required minLength={8} className={field} />
+        <PasswordInput name="password" required minLength={8} className={field} />
       </div>
       {state?.error && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{state.error}</p>

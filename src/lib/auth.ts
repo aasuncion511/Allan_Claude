@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSessionUserId } from "@/lib/session";
@@ -6,6 +7,17 @@ import { hasPermission, type PermissionKey } from "@/lib/permissions";
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
+}
+
+/** Random 10-char temp password for "forgot password" resets — excludes
+ *  ambiguous characters (0/O/1/l/I) since it's typed in from an email. */
+const TEMP_PASSWORD_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+export function generateTempPassword(length = 10): string {
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    out += TEMP_PASSWORD_CHARS[randomInt(TEMP_PASSWORD_CHARS.length)];
+  }
+  return out;
 }
 
 export async function verifyPassword(

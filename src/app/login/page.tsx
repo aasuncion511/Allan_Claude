@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction } from "./actions";
+import { PasswordInput } from "@/components/password-input";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, undefined);
@@ -34,12 +35,16 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-ink">
-              Password
-            </label>
-            <input
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-ink">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-xs text-brand hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+            <PasswordInput
               name="password"
-              type="password"
               required
               autoComplete="current-password"
               className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand"

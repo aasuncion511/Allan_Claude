@@ -66,3 +66,12 @@ export async function checkSignupRateLimit(scope: string): Promise<string | null
   if (result.allowed) return null;
   return `Too many signup attempts from this connection. Please try again in ${friendlyRetry(result.retryAfterSeconds)}.`;
 }
+
+/** Rate-limit a password-reset request — each one actually rewrites a
+ *  password and sends an email, so keep this tight. */
+export async function checkPasswordResetRateLimit(scope: string): Promise<string | null> {
+  const ip = await clientIp();
+  const result = checkRateLimit(`reset:${scope}:${ip}`, 5, 60 * 60 * 1000);
+  if (result.allowed) return null;
+  return `Too many reset requests from this connection. Please try again in ${friendlyRetry(result.retryAfterSeconds)}.`;
+}

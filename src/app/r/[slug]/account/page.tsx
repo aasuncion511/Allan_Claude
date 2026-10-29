@@ -6,6 +6,7 @@ import { customerLogoutAction } from "../customer-actions";
 import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ActiveHoldCard } from "./active-hold-card";
+import { CustomerChangePasswordForm } from "./change-password-form";
 
 export default async function CustomerAccountPage({
   params,
@@ -102,6 +103,15 @@ export default async function CustomerAccountPage({
           </tbody>
         </table>
       </div>
+
+      {customer.passwordHash && (
+        <div className="mt-10">
+          <h2 className="mb-3 text-lg font-semibold text-ink">Change Password</h2>
+          <div className="rounded-xl border border-line bg-white p-6">
+            <CustomerChangePasswordForm slug={slug} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

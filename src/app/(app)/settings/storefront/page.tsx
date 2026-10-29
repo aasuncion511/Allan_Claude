@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { getBaseUrl } from "@/lib/url";
 import { maskSecret } from "@/lib/format";
+import { PasswordInput } from "@/components/password-input";
 import { DEFAULT_TERMS_AND_CONDITIONS } from "@/lib/booking-contract";
 import {
   updateStorefrontProfile,
@@ -200,9 +201,8 @@ export default async function StorefrontSettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={label}>Secret Key</label>
-              <input
+              <PasswordInput
                 name="paymongoSecretKey"
-                type="password"
                 autoComplete="off"
                 defaultValue=""
                 className={field}
@@ -225,9 +225,8 @@ export default async function StorefrontSettingsPage() {
           </div>
           <div>
             <label className={label}>Webhook Signing Secret</label>
-            <input
+            <PasswordInput
               name="paymongoWebhookSecret"
-              type="password"
               autoComplete="off"
               defaultValue=""
               className={field}
@@ -415,9 +414,8 @@ export default async function StorefrontSettingsPage() {
             </div>
             <div>
               <label className={label}>Private Integration Token</label>
-              <input
+              <PasswordInput
                 name="ghlApiToken"
-                type="password"
                 autoComplete="off"
                 defaultValue=""
                 className={field}

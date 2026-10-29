@@ -4,6 +4,7 @@ import { useActionState, useRef, useEffect } from "react";
 import { inviteTeammate, changeOwnPassword } from "@/app/(app)/settings/team/actions";
 import { PermissionCheckboxes } from "@/components/permission-checkboxes";
 import { DEFAULT_STAFF_PERMISSIONS } from "@/lib/permissions";
+import { PasswordInput } from "@/components/password-input";
 
 export function InviteForm() {
   const [state, formAction, pending] = useActionState(inviteTeammate, undefined);
@@ -31,9 +32,8 @@ export function InviteForm() {
         </div>
         <div>
           <label className={label}>Temporary Password</label>
-          <input
+          <PasswordInput
             name="password"
-            type="password"
             required
             minLength={8}
             className={field}
@@ -73,16 +73,16 @@ export function ChangePasswordForm() {
     <form ref={formRef} action={formAction} className="space-y-4">
       <div>
         <label className={label}>Current Password</label>
-        <input name="currentPassword" type="password" required className={field} />
+        <PasswordInput name="currentPassword" required className={field} />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={label}>New Password</label>
-          <input name="newPassword" type="password" required minLength={8} className={field} />
+          <PasswordInput name="newPassword" required minLength={8} className={field} />
         </div>
         <div>
           <label className={label}>Confirm New Password</label>
-          <input name="confirmPassword" type="password" required minLength={8} className={field} />
+          <PasswordInput name="confirmPassword" required minLength={8} className={field} />
         </div>
       </div>
       {state?.error && (

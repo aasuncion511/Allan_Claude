@@ -2,13 +2,88 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { hashPassword, verifyPassword } from "@/lib/customer-auth";
+import { hashPassword, verifyPassword, requireCustomerForOrg } from "@/lib/customer-auth";
+import { generateTempPassword } from "@/lib/auth";
 import { setCustomerSessionCookie, clearCustomerSessionCookie } from "@/lib/customer-session";
 import { getPublicOrgBySlug } from "@/lib/public-org";
 import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
-import { checkLoginRateLimit, checkSignupRateLimit } from "@/lib/rate-limit";
+import { checkLoginRateLimit, checkSignupRateLimit, checkPasswordResetRateLimit } from "@/lib/rate-limit";
+import { sendTransactionalEmail, isResendConfigured } from "@/lib/resend";
 
 export type CustomerAuthState = { error?: string } | undefined;
+export type CustomerResetState = { error?: string; success?: boolean } | undefined;
+
+export async function customerRequestPasswordResetAction(
+  slug: string,
+  _prevState: CustomerResetState,
+  formData: FormData
+): Promise<CustomerResetState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) return { error: "Email is required." };
+
+  const limitError = await checkPasswordResetRateLimit(`customer:${slug}`);
+  if (limitError) return { error: limitError };
+
+  if (!isResendConfigured()) {
+    return { error: "Password reset email isn't set up yet — contact us directly for help." };
+  }
+
+  const org = await getPublicOrgBySlug(slug);
+  if (org) {
+    const customer = await prisma.customer.findFirst({
+      where: { organizationId: org.id, email, passwordHash: { not: null } },
+    });
+    if (customer && customer.email) {
+      const tempPassword = generateTempPassword();
+      const result = await sendTransactionalEmail({
+        to: customer.email,
+        subject: `Your ${org.name} account password has been reset`,
+        html: `<p>Hi ${customer.name},</p><p>Your password has been reset. Your new temporary password is:</p><p style="font-size:18px;font-weight:bold;letter-spacing:1px;">${tempPassword}</p><p>Sign in with it at your next visit, then change it from your account page.</p><p>If you didn't request this, please contact us.</p>`,
+      });
+      if (result.ok) {
+        await prisma.customer.update({
+          where: { id: customer.id },
+          data: { passwordHash: await hashPassword(tempPassword) },
+        });
+      } else {
+        console.error("[customer-forgot-password] send failed:", result.error);
+      }
+    }
+  }
+
+  return { success: true };
+}
+
+export type CustomerChangePasswordState = { error?: string; success?: boolean } | undefined;
+
+export async function customerChangeOwnPasswordAction(
+  slug: string,
+  _prevState: CustomerChangePasswordState,
+  formData: FormData
+): Promise<CustomerChangePasswordState> {
+  const org = await getPublicOrgBySlug(slug);
+  if (!org) return { error: "This rental company could not be found." };
+  const customer = await requireCustomerForOrg(org.id, slug);
+  if (!customer.passwordHash) {
+    return { error: "This account doesn't have a password set yet." };
+  }
+
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  const ok = await verifyPassword(currentPassword, customer.passwordHash);
+  if (!ok) return { error: "Current password is incorrect." };
+  if (newPassword.length < 8) return { error: "New password must be at least 8 characters." };
+  if (newPassword !== confirmPassword) return { error: "New password and confirmation don't match." };
+
+  await prisma.customer.update({
+    where: { id: customer.id },
+    data: { passwordHash: await hashPassword(newPassword) },
+  });
+
+  return { success: true };
+}
 
 export async function customerSignupAction(
   slug: string,

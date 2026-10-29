@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { customerLoginAction } from "../customer-actions";
+import { PasswordInput } from "@/components/password-input";
 
 export function CustomerLoginForm({
   slug,
@@ -26,8 +27,13 @@ export function CustomerLoginForm({
         <input name="email" type="email" required className={field} />
       </div>
       <div>
-        <label className={label}>Password</label>
-        <input name="password" type="password" required className={field} />
+        <div className="mb-1 flex items-center justify-between">
+          <label className="block text-sm font-medium text-ink">Password</label>
+          <Link href={`/r/${slug}/forgot-password`} className="text-xs text-brand hover:underline">
+            Forgot password?
+          </Link>
+        </div>
+        <PasswordInput name="password" required className={field} />
       </div>
       {state?.error && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-danger-text">{state.error}</p>
