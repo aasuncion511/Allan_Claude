@@ -39,7 +39,7 @@ export function ActiveHoldCard({
           return (
             <div className="mb-6 rounded-xl border border-line bg-surface p-5 text-sm text-ink-soft">
               {vehicleLabel} — your free hold expired.{" "}
-              <a href={`/r/${slug}/fleet`} className="text-brand hover:underline">
+              <a href={`/r/${slug}/fleet`} className="text-[var(--store-accent)] hover:underline">
                 Check availability again
               </a>
               .
@@ -74,7 +74,7 @@ export function ActiveHoldCard({
               <button
                 type="submit"
                 disabled={pending}
-                className="rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                className="rounded-lg bg-[var(--store-accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[var(--store-accent-dark)] disabled:opacity-50"
               >
                 {pending ? "Redirecting to payment…" : `Reserve Now — Pay ${formatCurrency(reservationFee)}`}
               </button>

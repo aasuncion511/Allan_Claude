@@ -230,7 +230,7 @@ export function BookingWidget({
   );
 
   const field =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-[var(--store-accent)]";
   const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
@@ -421,7 +421,7 @@ export function BookingWidget({
             type="button"
             onClick={handleContinueFromDates}
             disabled={checking}
-            className="w-full rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+            className="w-full rounded-lg bg-[var(--store-accent)] px-4 py-3 text-base font-semibold text-white hover:bg-[var(--store-accent-dark)] disabled:opacity-50"
           >
             {checking ? "Checking availability…" : "Book This Car"}
           </button>
@@ -466,7 +466,7 @@ export function BookingWidget({
             <button
               type="submit"
               disabled={contactPending}
-              className="flex-1 rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+              className="flex-1 rounded-lg bg-[var(--store-accent)] px-4 py-3 text-base font-semibold text-white hover:bg-[var(--store-accent-dark)] disabled:opacity-50"
             >
               {contactPending ? "Saving…" : "Continue"}
             </button>
@@ -530,7 +530,7 @@ export function BookingWidget({
             <button
               type="button"
               onClick={() => setStep("choose")}
-              className="flex-1 rounded-lg bg-brand px-4 py-3 text-base font-semibold text-white hover:bg-brand-dark"
+              className="flex-1 rounded-lg bg-[var(--store-accent)] px-4 py-3 text-base font-semibold text-white hover:bg-[var(--store-accent-dark)]"
             >
               Continue
             </button>
@@ -621,7 +621,7 @@ export function BookingWidget({
                 <button
                   type="submit"
                   disabled={!agreed || holdPending}
-                  className="w-full rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                  className="w-full rounded-lg bg-[var(--store-accent)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--store-accent-dark)] disabled:opacity-50"
                 >
                   {holdPending ? "Holding…" : `Hold This Vehicle — FREE for ${Math.round(holdWindowSeconds / 60)} Minutes`}
                 </button>
@@ -675,7 +675,7 @@ export function BookingWidget({
                       <button
                         type="submit"
                         disabled={reservePending}
-                        className="w-full rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                        className="w-full rounded-lg bg-[var(--store-accent)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--store-accent-dark)] disabled:opacity-50"
                       >
                         {reservePending
                           ? "Redirecting to payment…"

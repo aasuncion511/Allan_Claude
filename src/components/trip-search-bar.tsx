@@ -12,7 +12,7 @@ export function TripSearchBar({
   className?: string;
 }) {
   const field =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand";
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-[var(--store-accent)]";
   const label = "mb-1 block text-xs font-medium text-ink-soft";
 
   return (
@@ -32,7 +32,7 @@ export function TripSearchBar({
       <div className="flex items-end">
         <button
           type="submit"
-          className="w-full rounded-lg bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark sm:w-auto"
+          className="w-full rounded-lg bg-[var(--store-accent)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--store-accent-dark)] sm:w-auto"
         >
           Search Available Cars
         </button>

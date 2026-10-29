@@ -46,7 +46,7 @@ export function PublicVehicleCard({
             .filter(Boolean)
             .join(" · ")}
         </p>
-        <p className="mt-2 text-lg font-bold text-brand">
+        <p className="mt-2 text-lg font-bold text-[var(--store-accent)]">
           {formatCurrency(vehicle.dailyRate)}
           <span className="text-sm font-normal text-ink-soft">/day</span>
         </p>

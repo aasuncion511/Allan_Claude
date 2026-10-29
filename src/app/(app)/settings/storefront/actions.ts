@@ -22,10 +22,16 @@ export async function updateStorefrontProfile(formData: FormData) {
   const pastedHeroUrl = field("heroImageUrl");
   const heroImageUrl = removeHeroImage ? null : (uploadedHero ?? pastedHeroUrl ?? undefined);
 
+  const themeRaw = String(formData.get("theme") ?? "");
+  const theme = (["CLASSIC", "MODERN", "ADVENTURE"] as const).includes(themeRaw as never)
+    ? (themeRaw as "CLASSIC" | "MODERN" | "ADVENTURE")
+    : undefined;
+
   await prisma.organization.update({
     where: { id: organizationId },
     data: {
       ...(name ? { name } : {}),
+      ...(theme ? { theme } : {}),
       tagline: field("tagline"),
       aboutText: field("aboutText"),
       ...(logoUrl !== undefined ? { logoUrl } : {}),

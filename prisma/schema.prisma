@@ -107,6 +107,12 @@ enum SubscriptionStatus {
   INCOMPLETE
 }
 
+enum ThemeName {
+  CLASSIC
+  MODERN
+  ADVENTURE
+}
+
 model Organization {
   id                   String   @id @default(cuid())
   name                 String
@@ -114,6 +120,10 @@ model Organization {
   createdAt            DateTime @default(now())
 
   // Public storefront content
+  /// Selectable storefront design — swaps accent color, hero gradient, and
+  /// section backgrounds via the [data-theme] CSS variables in globals.css.
+  /// Never affects the admin app, only the public /r/[slug] storefront.
+  theme                ThemeName @default(CLASSIC)
   tagline              String?
   aboutText            String?
   logoUrl              String?

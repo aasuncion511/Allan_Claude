@@ -63,7 +63,7 @@ export default async function VehicleDetailPage({
               .filter(Boolean)
               .join(" · ")}
           </p>
-          <p className="mt-4 text-3xl font-bold text-brand">
+          <p className="mt-4 text-3xl font-bold text-[var(--store-accent)]">
             {formatCurrency(vehicle.dailyRate)}
             <span className="text-base font-normal text-ink-soft">/day</span>
           </p>
@@ -74,7 +74,7 @@ export default async function VehicleDetailPage({
             {isBookable ? (
               <a
                 href="#book"
-                className="inline-block rounded-lg bg-brand px-6 py-3 text-base font-semibold text-white hover:bg-brand-dark"
+                className="inline-block rounded-lg bg-[var(--store-accent)] px-6 py-3 text-base font-semibold text-white hover:bg-[var(--store-accent-dark)]"
               >
                 Book This Car
               </a>

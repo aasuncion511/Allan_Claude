@@ -18,7 +18,10 @@ export default async function StorefrontLayout({
   const signedInHere = customer?.organizationId === org.id;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-ink">
+    <div
+      data-theme={org.theme.toLowerCase()}
+      className="flex min-h-screen flex-col bg-white text-ink"
+    >
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href={`/r/${org.slug}`} className="flex items-center gap-2">
@@ -59,7 +62,7 @@ export default async function StorefrontLayout({
                 </Link>
                 <Link
                   href={`/r/${org.slug}/fleet`}
-                  className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+                  className="rounded-lg bg-[var(--store-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--store-accent-dark)]"
                 >
                   Book Now
                 </Link>

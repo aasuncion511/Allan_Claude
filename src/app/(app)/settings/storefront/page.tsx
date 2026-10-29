@@ -76,6 +76,37 @@ export default async function StorefrontSettingsPage() {
             </p>
           </div>
           <div>
+            <label className={label}>Storefront Theme</label>
+            <p className="mb-2 text-xs text-ink-soft">
+              Changes the accent color and hero background on your public storefront. The admin app you&apos;re using
+              right now always looks the same regardless of this choice.
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {(
+                [
+                  { value: "CLASSIC", label: "Classic", desc: "Deep green, clean & trustworthy", swatch: "#004c25" },
+                  { value: "MODERN", label: "Modern", desc: "Navy & charcoal, minimal", swatch: "#0f172a" },
+                  { value: "ADVENTURE", label: "Adventure", desc: "Warm terracotta, travel vibe", swatch: "#9a3412" },
+                ] as const
+              ).map((t) => (
+                <label key={t.value} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="theme"
+                    value={t.value}
+                    defaultChecked={org.theme === t.value}
+                    className="peer sr-only"
+                  />
+                  <div className="rounded-xl border-2 border-line p-3 transition peer-checked:border-brand peer-checked:bg-success-surface">
+                    <div className="mb-2 h-6 w-full rounded" style={{ backgroundColor: t.swatch }} />
+                    <p className="text-sm font-semibold text-ink">{t.label}</p>
+                    <p className="text-xs text-ink-soft">{t.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className={label}>Tagline</label>
             <input name="tagline" defaultValue={org.tagline ?? ""} className={field} placeholder="Travel Made Easy and Fun!" />
           </div>

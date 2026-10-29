@@ -28,7 +28,7 @@ export function DocumentUploadForm({ slug, documents }: { slug: string; document
   }, [state]);
 
   const field =
-    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-brand";
+    "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-[var(--store-accent)]";
   const label = "mb-1 block text-sm font-medium text-ink";
 
   return (
@@ -78,7 +78,7 @@ export function DocumentUploadForm({ slug, documents }: { slug: string; document
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+          className="rounded-lg bg-[var(--store-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--store-accent-dark)] disabled:opacity-50"
         >
           {pending ? "Uploading…" : "Upload Document"}
         </button>

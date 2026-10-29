@@ -20,7 +20,7 @@ export default async function ContactPage({
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
               Phone
             </p>
-            <a href={`tel:${org.contactPhone}`} className="mt-1 block text-lg font-semibold text-brand">
+            <a href={`tel:${org.contactPhone}`} className="mt-1 block text-lg font-semibold text-[var(--store-accent)]">
               {org.contactPhone}
             </a>
           </div>
@@ -30,7 +30,7 @@ export default async function ContactPage({
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
               Email
             </p>
-            <a href={`mailto:${org.contactEmail}`} className="mt-1 block text-lg font-semibold text-brand">
+            <a href={`mailto:${org.contactEmail}`} className="mt-1 block text-lg font-semibold text-[var(--store-accent)]">
               {org.contactEmail}
             </a>
           </div>

@@ -100,7 +100,7 @@ export default async function CustomerAccountPage({
               <tr>
                 <td colSpan={4} className="px-4 py-10 text-center text-ink-soft">
                   No bookings yet.{" "}
-                  <a href={`/r/${org.slug}/fleet`} className="text-brand hover:underline">
+                  <a href={`/r/${org.slug}/fleet`} className="text-[var(--store-accent)] hover:underline">
                     Browse our fleet
                   </a>
                   .

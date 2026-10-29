@@ -37,3 +37,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Storefront theme variants — deliberately NOT inside the @theme block
+ * above: Tailwind v4's "inline" mode bakes those values as literal colors
+ * into compiled utilities (bg-brand compiles to a fixed hex, not var()), so
+ * overriding --color-brand at runtime has no effect. These plain variables
+ * are referenced via Tailwind's arbitrary-value syntax instead
+ * (bg-[var(--store-accent)]) in the storefront-only components that are
+ * meant to change per organization. The admin app always uses bg-brand
+ * directly and is intentionally unaffected by a client's storefront theme. */
+:root {
+  --store-accent: #004c25;
+  --store-accent-dark: #053a25;
+  --store-hero-from: #ecfdf5;
+  --store-hero-to: #ffffff;
+  --store-soft-bg: #f8fafc;
+}
+[data-theme="modern"] {
+  --store-accent: #0f172a;
+  --store-accent-dark: #020617;
+  --store-hero-from: #eef2ff;
+  --store-hero-to: #ffffff;
+  --store-soft-bg: #f1f5f9;
+}
+[data-theme="adventure"] {
+  --store-accent: #9a3412;
+  --store-accent-dark: #7c2d12;
+  --store-hero-from: #fff7ed;
+  --store-hero-to: #fffbeb;
+  --store-soft-bg: #fef3c7;
+}

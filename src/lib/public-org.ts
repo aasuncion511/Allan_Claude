@@ -5,6 +5,7 @@ const PUBLIC_ORG_SELECT = {
   id: true,
   name: true,
   slug: true,
+  theme: true,
   tagline: true,
   aboutText: true,
   logoUrl: true,

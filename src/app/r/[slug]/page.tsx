@@ -42,7 +42,7 @@ export default async function StorefrontHome({
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-b from-emerald-50 to-white">
+      <section className="bg-gradient-to-b from-[var(--store-hero-from)] to-[var(--store-hero-to)]">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-6 py-16 sm:grid-cols-2 sm:py-24">
           <div>
             <h1 className="text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
@@ -58,7 +58,7 @@ export default async function StorefrontHome({
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
                 href={`/r/${org.slug}/fleet`}
-                className="text-sm font-semibold text-brand hover:underline"
+                className="text-sm font-semibold text-[var(--store-accent)] hover:underline"
               >
                 Or browse the full fleet →
               </Link>
@@ -101,7 +101,7 @@ export default async function StorefrontHome({
           <div className="mt-8">
             <Link
               href={`/r/${org.slug}/fleet`}
-              className="font-semibold text-brand hover:underline"
+              className="font-semibold text-[var(--store-accent)] hover:underline"
             >
               See more cars →
             </Link>
@@ -110,7 +110,7 @@ export default async function StorefrontHome({
       )}
 
       {/* How it works */}
-      <section className="bg-slate-50">
+      <section className="bg-[var(--store-soft-bg)]">
         <div className="mx-auto max-w-6xl px-6 py-16">
           <h2 className="text-2xl font-bold text-ink">
             How to Book Your Car in 4 Easy Steps
@@ -118,7 +118,7 @@ export default async function StorefrontHome({
           <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <div key={step.title}>
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand font-bold text-white">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--store-accent)] font-bold text-white">
                   {i + 1}
                 </div>
                 <p className="font-semibold text-ink">{step.title}</p>
@@ -158,7 +158,7 @@ export default async function StorefrontHome({
 
       {/* FAQ */}
       {faqs.length > 0 && (
-        <section className="bg-slate-50">
+        <section className="bg-[var(--store-soft-bg)]">
           <div className="mx-auto max-w-3xl px-6 py-16">
             <h2 className="text-2xl font-bold text-ink">
               Frequently Asked Questions
@@ -178,7 +178,7 @@ export default async function StorefrontHome({
       <section className="mx-auto max-w-6xl px-6 py-16 text-center">
         <Link
           href={`/r/${org.slug}/fleet`}
-          className="inline-block rounded-lg bg-brand px-8 py-3 text-base font-semibold text-white hover:bg-brand-dark"
+          className="inline-block rounded-lg bg-[var(--store-accent)] px-8 py-3 text-base font-semibold text-white hover:bg-[var(--store-accent-dark)]"
         >
           Book Now
         </Link>
