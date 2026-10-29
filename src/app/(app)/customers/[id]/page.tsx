@@ -21,9 +21,17 @@ export default async function CustomerDetailPage({
         include: { vehicle: true },
         orderBy: { startDate: "desc" },
       },
+      documents: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!customer) notFound();
+
+  const DOC_TYPE_LABELS: Record<string, string> = {
+    DRIVERS_LICENSE: "Driver's License",
+    GOVERNMENT_ID: "Government ID",
+    PROOF_OF_BILLING: "Proof of Billing",
+    OTHER: "Other",
+  };
 
   const totalSpent = customer.bookings.reduce(
     (sum, b) => sum + b.amountPaid,
@@ -119,6 +127,24 @@ export default async function CustomerDetailPage({
           </form>
         </div>
       </div>
+
+      {customer.documents.length > 0 && (
+        <>
+          <h2 className="mb-3 text-lg font-semibold text-ink">Verification Documents</h2>
+          <div className="mb-6 flex flex-wrap gap-3">
+            {customer.documents.map((d) => (
+              <div key={d.id} className="w-36 rounded-xl border border-line bg-surface p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={d.fileUrl} alt={d.type} className="h-20 w-full rounded-lg object-cover" />
+                <p className="mt-1 text-xs text-ink">{DOC_TYPE_LABELS[d.type] ?? d.type}</p>
+                {d.status === "PENDING" && <p className="text-xs text-amber-600">Pending review</p>}
+                {d.status === "APPROVED" && <p className="text-xs text-success-text">✅ Approved</p>}
+                {d.status === "REJECTED" && <p className="text-xs text-danger-text">⚠ Rejected</p>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="mb-3 text-lg font-semibold text-ink">
         Booking History

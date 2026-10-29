@@ -189,6 +189,7 @@ model Organization {
   expenses         Expense[]
   maintenanceLogs  MaintenanceLog[]
   fuelLogs         FuelLog[]
+  customerDocuments CustomerDocument[]
   faqs             Faq[]
   testimonials     Testimonial[]
   smsLogs          SmsLog[]
@@ -278,9 +279,48 @@ model Customer {
   bookings       Booking[]
   bookingInquiries BookingInquiry[]
   smsLogs        SmsLog[]
+  documents      CustomerDocument[]
 
   @@unique([organizationId, email])
   @@index([organizationId, name])
+}
+
+enum DocumentType {
+  DRIVERS_LICENSE
+  GOVERNMENT_ID
+  PROOF_OF_BILLING
+  OTHER
+}
+
+enum DocumentReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// ID/license verification — a renter uploads a photo, staff review and
+/// approve/reject it. Separate from Customer.driverLicense (the text field
+/// staff can type in at the counter) — this is the actual image evidence
+/// with an audit trail (who reviewed it, when, why rejected).
+model CustomerDocument {
+  id               String   @id @default(cuid())
+  organizationId   String
+  customerId       String
+  type             DocumentType
+  /// Inline data: URI, same pattern as src/lib/image-upload.ts (logo, hero
+  /// image) — no object storage yet, see the tool-stack gap notes on that.
+  fileUrl          String
+  status           DocumentReviewStatus @default(PENDING)
+  rejectionReason  String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime @default(now())
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer         Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([customerId])
 }
 
 model Booking {

@@ -5,11 +5,14 @@ import { PageHeader } from "@/components/page-header";
 
 export default async function CustomersPage() {
   const { organizationId } = await requirePermission("customers");
-  const customers = await prisma.customer.findMany({
-    where: { organizationId },
-    orderBy: { name: "asc" },
-    include: { _count: { select: { bookings: true } } },
-  });
+  const [customers, pendingDocuments] = await Promise.all([
+    prisma.customer.findMany({
+      where: { organizationId },
+      orderBy: { name: "asc" },
+      include: { _count: { select: { bookings: true } } },
+    }),
+    prisma.customerDocument.count({ where: { organizationId, status: "PENDING" } }),
+  ]);
 
   return (
     <div>
@@ -17,12 +20,25 @@ export default async function CustomersPage() {
         title="Customers"
         description={`${customers.length} customer${customers.length === 1 ? "" : "s"} in your CRM`}
         actions={
-          <Link
-            href="/customers/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
-          >
-            + Add Customer
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/customers/documents"
+              className="relative rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink hover:bg-canvas"
+            >
+              Document Review
+              {pendingDocuments > 0 && (
+                <span className="ml-2 rounded-full bg-warning-surface px-2 py-0.5 text-xs font-semibold text-warning-text">
+                  {pendingDocuments}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/customers/new"
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+            >
+              + Add Customer
+            </Link>
+          </div>
         }
       />
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { reviewCustomerDocument } from "@/lib/customer-documents";
 
 function parseCustomerForm(formData: FormData) {
   const birthdayRaw = String(formData.get("birthday") ?? "").trim();
@@ -49,6 +50,32 @@ export async function toggleCustomerSmsOptOut(customerId: string, nextOptOut: bo
     },
   });
   revalidatePath(`/customers/${customerId}`);
+}
+
+export async function approveCustomerDocument(documentId: string) {
+  const user = await requirePermission("customers");
+  const result = await reviewCustomerDocument({
+    organizationId: user.organizationId,
+    documentId,
+    reviewedByUserId: user.id,
+    approve: true,
+  });
+  if (!result.ok) notFound();
+  revalidatePath("/customers/documents");
+}
+
+export async function rejectCustomerDocument(documentId: string, formData: FormData) {
+  const user = await requirePermission("customers");
+  const rejectionReason = String(formData.get("rejectionReason") ?? "").trim();
+  const result = await reviewCustomerDocument({
+    organizationId: user.organizationId,
+    documentId,
+    reviewedByUserId: user.id,
+    approve: false,
+    rejectionReason,
+  });
+  if (!result.ok) notFound();
+  revalidatePath("/customers/documents");
 }
 
 export async function deleteCustomer(customerId: string) {

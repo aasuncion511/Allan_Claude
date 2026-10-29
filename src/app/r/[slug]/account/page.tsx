@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ActiveHoldCard } from "./active-hold-card";
 import { CustomerChangePasswordForm } from "./change-password-form";
+import { DocumentUploadForm } from "./document-upload-form";
 
 export default async function CustomerAccountPage({
   params,
@@ -18,11 +19,17 @@ export default async function CustomerAccountPage({
   if (!org) notFound();
 
   const customer = await requireCustomerForOrg(org.id, slug);
-  const bookings = await prisma.booking.findMany({
-    where: { customerId: customer.id, organizationId: org.id },
-    include: { vehicle: true },
-    orderBy: { startDate: "desc" },
-  });
+  const [bookings, documents] = await Promise.all([
+    prisma.booking.findMany({
+      where: { customerId: customer.id, organizationId: org.id },
+      include: { vehicle: true },
+      orderBy: { startDate: "desc" },
+    }),
+    prisma.customerDocument.findMany({
+      where: { customerId: customer.id, organizationId: org.id },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   const logout = customerLogoutAction.bind(null, slug);
   const now = new Date();
@@ -102,6 +109,16 @@ export default async function CustomerAccountPage({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-10">
+        <h2 className="mb-3 text-lg font-semibold text-ink">Verification Documents</h2>
+        <p className="mb-3 text-sm text-ink-soft">
+          Upload a photo of your driver&apos;s license or ID — speeds up pickup since it&apos;s already verified.
+        </p>
+        <div className="rounded-xl border border-line bg-white p-6">
+          <DocumentUploadForm slug={slug} documents={documents} />
+        </div>
       </div>
 
       {customer.passwordHash && (

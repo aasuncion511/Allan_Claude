@@ -9,6 +9,7 @@ import { getPublicOrgBySlug } from "@/lib/public-org";
 import { upsertGhlContact, isGhlConfigured } from "@/lib/ghl";
 import { checkLoginRateLimit, checkSignupRateLimit, checkPasswordResetRateLimit } from "@/lib/rate-limit";
 import { sendTransactionalEmail, isResendConfigured } from "@/lib/resend";
+import { uploadCustomerDocument } from "@/lib/customer-documents";
 
 export type CustomerAuthState = { error?: string } | undefined;
 export type CustomerResetState = { error?: string; success?: boolean } | undefined;
@@ -227,4 +228,28 @@ export async function saveContactAction(
 
   await setCustomerSessionCookie(customer.id);
   return { name: customer.name, email: customer.email ?? "", phone: customer.phone, address: customer.address ?? "" };
+}
+
+export type UploadDocumentState = { error?: string; success?: boolean } | undefined;
+
+export async function customerUploadDocumentAction(
+  slug: string,
+  _prevState: UploadDocumentState,
+  formData: FormData
+): Promise<UploadDocumentState> {
+  const org = await getPublicOrgBySlug(slug);
+  if (!org) return { error: "This rental company could not be found." };
+  const customer = await requireCustomerForOrg(org.id, slug);
+
+  const type = String(formData.get("type") ?? "OTHER");
+  const result = await uploadCustomerDocument({
+    organizationId: org.id,
+    customerId: customer.id,
+    type,
+    formData,
+    fileField: "file",
+  });
+
+  if (!result.ok) return { error: result.error };
+  return { success: true };
 }
