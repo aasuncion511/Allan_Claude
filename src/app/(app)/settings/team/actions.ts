@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser, hashPassword } from "@/lib/auth";
+import { requireUser, hashPassword, verifyPassword } from "@/lib/auth";
 import { parsePermissionsFromForm } from "@/lib/permissions";
 
 export type InviteState = { error?: string } | undefined;
@@ -62,6 +62,31 @@ export async function updateTeammatePermissions(memberId: string, formData: Form
   });
   revalidatePath("/settings/team");
   redirect("/settings/team");
+}
+
+export type ChangePasswordState = { error?: string; success?: boolean } | undefined;
+
+export async function changeOwnPassword(
+  _prevState: ChangePasswordState,
+  formData: FormData
+): Promise<ChangePasswordState> {
+  const user = await requireUser();
+
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  const ok = await verifyPassword(currentPassword, user.passwordHash);
+  if (!ok) return { error: "Current password is incorrect." };
+  if (newPassword.length < 8) return { error: "New password must be at least 8 characters." };
+  if (newPassword !== confirmPassword) return { error: "New password and confirmation don't match." };
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await hashPassword(newPassword) },
+  });
+
+  return { success: true };
 }
 
 export async function removeTeammate(memberId: string) {

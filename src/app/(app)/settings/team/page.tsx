@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
-import { InviteForm } from "@/components/team-client";
+import { InviteForm, ChangePasswordForm } from "@/components/team-client";
 import { formatDate } from "@/lib/format";
 import { removeTeammate } from "./actions";
 
@@ -84,16 +84,24 @@ export default async function TeamPage() {
           <h2 className="mb-3 text-lg font-semibold text-ink">
             Add a Teammate
           </h2>
-          <div className="rounded-xl border border-line bg-surface p-6">
+          <div className="mb-8 rounded-xl border border-line bg-surface p-6">
             <InviteForm />
           </div>
         </>
       ) : (
-        <p className="text-sm text-ink-soft">
+        <p className="mb-8 text-sm text-ink-soft">
           Only the account owner can add or remove teammates, or change what
           they can access.
         </p>
       )}
+
+      <h2 className="mb-3 text-lg font-semibold text-ink">My Account</h2>
+      <div className="rounded-xl border border-line bg-surface p-6">
+        <p className="mb-4 text-sm text-ink-soft">
+          Change the password for your own login ({user.email}).
+        </p>
+        <ChangePasswordForm />
+      </div>
     </div>
   );
 }
