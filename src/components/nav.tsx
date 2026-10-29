@@ -31,10 +31,12 @@ export function Nav({
   userName,
   orgName,
   permissions,
+  isPlatformAdmin,
 }: {
   userName: string;
   orgName: string;
   permissions: Record<PermissionKey, boolean>;
+  isPlatformAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -120,6 +122,12 @@ export function Nav({
             <div className="my-2 border-t border-white/10" />
           )}
           {visibleSettingsLinks.map(renderLink)}
+          {isPlatformAdmin && (
+            <>
+              <div className="my-2 border-t border-white/10" />
+              {renderLink({ href: "/platform-admin", label: "Platform Admin", icon: "🛡️" })}
+            </>
+          )}
         </nav>
         <div className="border-t border-white/10 px-4 py-4">
           <p className="mb-2 truncate text-xs text-white/50">

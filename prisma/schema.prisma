@@ -205,6 +205,12 @@ model User {
   /// Ignored for OWNER (always full access). For STAFF, a map of permission
   /// key -> boolean, e.g. {"fleet": true, "billing": false}. See src/lib/permissions.ts.
   permissions    Json?
+  /// Cross-tenant: lets this user see/manage every organization on the
+  /// platform via /platform-admin, regardless of their role within their own
+  /// org. Never grantable through the app UI — only via the PLATFORM_ADMIN_EMAIL
+  /// boot-time grant script (scripts/grant-platform-admin.mjs), so a client's
+  /// own OWNER role can never accidentally become a platform admin.
+  isPlatformAdmin Boolean @default(false)
   createdAt      DateTime @default(now())
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

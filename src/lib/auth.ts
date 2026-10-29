@@ -64,3 +64,14 @@ export async function requireOwner() {
   if (user.role !== "OWNER") redirect("/403");
   return user;
 }
+
+/** Cross-tenant: the platform operator's own gate for /platform-admin, which
+ *  can see and manage every organization. Independent of org role — a
+ *  client's own OWNER never passes this. Only granted via
+ *  scripts/grant-platform-admin.mjs (PLATFORM_ADMIN_EMAIL), never through
+ *  the app UI. */
+export async function requirePlatformAdmin() {
+  const user = await requireUser();
+  if (!user.isPlatformAdmin) redirect("/403");
+  return user;
+}
