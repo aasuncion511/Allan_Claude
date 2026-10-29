@@ -17,6 +17,11 @@ export async function updateStorefrontProfile(formData: FormData) {
   const pastedLogoUrl = field("logoUrlText");
   const logoUrl = removeLogo ? null : (uploadedLogo ?? pastedLogoUrl ?? undefined);
 
+  const uploadedHero = await readImageUpload(formData, "heroImageFile", 3 * 1024 * 1024);
+  const removeHeroImage = formData.get("removeHeroImage") === "on";
+  const pastedHeroUrl = field("heroImageUrl");
+  const heroImageUrl = removeHeroImage ? null : (uploadedHero ?? pastedHeroUrl ?? undefined);
+
   await prisma.organization.update({
     where: { id: organizationId },
     data: {
@@ -24,7 +29,7 @@ export async function updateStorefrontProfile(formData: FormData) {
       tagline: field("tagline"),
       aboutText: field("aboutText"),
       ...(logoUrl !== undefined ? { logoUrl } : {}),
-      heroImageUrl: field("heroImageUrl"),
+      ...(heroImageUrl !== undefined ? { heroImageUrl } : {}),
       contactPhone: field("contactPhone"),
       contactEmail: field("contactEmail"),
       address: field("address"),

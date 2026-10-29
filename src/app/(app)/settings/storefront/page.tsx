@@ -112,8 +112,32 @@ export default async function StorefrontSettingsPage() {
               />
             </div>
             <div>
-              <label className={label}>Hero Image URL (homepage banner)</label>
-              <input name="heroImageUrl" defaultValue={org.heroImageUrl ?? ""} className={field} placeholder="https://…" />
+              <label className={label}>Hero Image (homepage banner)</label>
+              <p className="mb-2 text-xs text-ink-soft">
+                The big photo on your storefront homepage. PNG/JPG/WEBP, up to 3MB — a wide landscape photo works best.
+              </p>
+              {org.heroImageUrl && (
+                <div className="mb-2 flex items-center gap-3 rounded-lg border border-line bg-canvas p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={org.heroImageUrl} alt="Current hero banner" className="h-10 w-auto" />
+                  <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+                    <input type="checkbox" name="removeHeroImage" />
+                    Remove hero image
+                  </label>
+                </div>
+              )}
+              <input
+                name="heroImageFile"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className={field}
+              />
+              <input
+                name="heroImageUrl"
+                defaultValue={org.heroImageUrl?.startsWith("data:") ? "" : (org.heroImageUrl ?? "")}
+                className={`${field} mt-2`}
+                placeholder="…or paste an image URL instead"
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
