@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation";
 export function SubscriptionGate({
   hasAccess,
   daysLeftInTrial,
+  isDemo,
   children,
 }: {
   hasAccess: boolean;
   daysLeftInTrial: number | null;
+  isDemo: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -21,17 +23,18 @@ export function SubscriptionGate({
         <div className="max-w-md rounded-xl border border-line bg-surface p-8 text-center">
           <div className="mb-3 text-3xl">⏳</div>
           <h2 className="text-lg font-semibold text-ink">
-            Your trial has ended
+            {isDemo ? "Your demo has ended" : "Your trial has ended"}
           </h2>
           <p className="mt-2 text-sm text-ink-soft">
-            Subscribe to a plan to keep using your fleet dashboard, bookings,
-            and reports.
+            {isDemo
+              ? "Liked what you saw? Set up your own real account to keep going — your sample data stays separate, so nothing carries over."
+              : "Subscribe to a plan to keep using your fleet dashboard, bookings, and reports."}
           </p>
           <Link
-            href="/settings/billing"
+            href={isDemo ? "/signup" : "/settings/billing"}
             className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
           >
-            View plans
+            {isDemo ? "Create your account" : "View plans"}
           </Link>
         </div>
       </div>
@@ -44,11 +47,15 @@ export function SubscriptionGate({
         <div className="mb-6 flex items-center justify-between rounded-lg bg-warning-surface px-4 py-3 text-sm text-warning-text">
           <span>
             {daysLeftInTrial === 0
-              ? "Your trial ends today."
-              : `Your trial ends in ${daysLeftInTrial} day${daysLeftInTrial === 1 ? "" : "s"}.`}
+              ? isDemo
+                ? "Your demo ends today."
+                : "Your trial ends today."
+              : isDemo
+                ? `Your demo ends in ${daysLeftInTrial} day${daysLeftInTrial === 1 ? "" : "s"}.`
+                : `Your trial ends in ${daysLeftInTrial} day${daysLeftInTrial === 1 ? "" : "s"}.`}
           </span>
-          <Link href="/settings/billing" className="font-medium hover:underline">
-            Choose a plan →
+          <Link href={isDemo ? "/signup" : "/settings/billing"} className="font-medium hover:underline">
+            {isDemo ? "Create your real account →" : "Choose a plan →"}
           </Link>
         </div>
       )}

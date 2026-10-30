@@ -122,6 +122,12 @@ model Organization {
   /// /r/[slug] storefront — see proxy.ts for the resolution logic.
   customDomain         String?  @unique
   createdAt            DateTime @default(now())
+  /// Self-provisioned prospect sandbox from /demo — pre-seeded with sample
+  /// data, given a 72-hour trial instead of the normal 14 days, and shown
+  /// as "Demo" (not "Trial") in the access-expired screen and Platform
+  /// Admin. Flagged separately from subscriptionStatus so a real trialing
+  /// client is never confused with an unconverted demo in reporting/cleanup.
+  isDemo               Boolean  @default(false)
 
   // Public storefront content
   /// Selectable storefront design — swaps accent color, hero gradient, and

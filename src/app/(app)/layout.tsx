@@ -34,6 +34,7 @@ export default async function AppLayout({
           <SubscriptionGate
             hasAccess={hasActiveAccess(org)}
             daysLeftInTrial={daysLeftInTrial(org)}
+            isDemo={org.isDemo}
           >
             {children}
           </SubscriptionGate>

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePlatformAdmin } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { formatDate } from "@/lib/format";
-import { suspendOrganization, reactivateOrganization } from "./actions";
+import { suspendOrganization, reactivateOrganization, deleteDemoOrganization } from "./actions";
 
 export default async function PlatformAdminPage() {
   await requirePlatformAdmin();
@@ -53,10 +53,18 @@ export default async function PlatformAdminPage() {
               const owner = org.users[0];
               const suspend = suspendOrganization.bind(null, org.id);
               const reactivate = reactivateOrganization.bind(null, org.id);
+              const deleteDemo = deleteDemoOrganization.bind(null, org.id);
               return (
                 <tr key={org.id} className="hover:bg-canvas">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-ink">{org.name}</p>
+                    <p className="font-medium text-ink">
+                      {org.name}
+                      {org.isDemo && (
+                        <span className="ml-2 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+                          Demo
+                        </span>
+                      )}
+                    </p>
                     <a
                       href={`/r/${org.slug}`}
                       target="_blank"
@@ -90,25 +98,37 @@ export default async function PlatformAdminPage() {
                   <td className="px-4 py-3 text-ink">{org._count.bookings}</td>
                   <td className="px-4 py-3 text-ink-soft">{formatDate(org.createdAt)}</td>
                   <td className="px-4 py-3 text-right">
-                    {org.subscriptionStatus === "CANCELED" ? (
-                      <form action={reactivate}>
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-success-text hover:underline"
-                        >
-                          Reactivate
-                        </button>
-                      </form>
-                    ) : (
-                      <form action={suspend}>
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-danger-text hover:underline"
-                        >
-                          Suspend
-                        </button>
-                      </form>
-                    )}
+                    <div className="flex items-center justify-end gap-3">
+                      {org.subscriptionStatus === "CANCELED" ? (
+                        <form action={reactivate}>
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-success-text hover:underline"
+                          >
+                            Reactivate
+                          </button>
+                        </form>
+                      ) : (
+                        <form action={suspend}>
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-danger-text hover:underline"
+                          >
+                            Suspend
+                          </button>
+                        </form>
+                      )}
+                      {org.isDemo && (
+                        <form action={deleteDemo}>
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-danger-text hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </form>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
